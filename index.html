@@ -1345,7 +1345,7 @@ function drawChips(){
 let typingTimer;
 $('#q').addEventListener('input',e=>{ clearTimeout(typingTimer); typingTimer=setTimeout(()=>{ query=e.target.value.trim(); chip=null; drawChips(); runSearch(true); },350); });
 $('#searchForm').addEventListener('submit',e=>{ e.preventDefault(); query=$('#q').value.trim(); chip=null; drawChips(); runSearch(true); $('#q').blur(); });
-$('#clear').onclick=()=>{ query=''; chip=null; $('#q').value=''; drawChips(); shown=[]; selId=null; drawMarkers(); render(); homeView(true); };
+$('#clear').onclick=()=>{ query=''; chip=null; $('#q').value=''; drawChips(); shown=[]; selId=null; drawMarkers(); render(); };
 
 /* 시작 */
 buildLabels();
