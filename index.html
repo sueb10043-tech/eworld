@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>이월드 길잡이</title>
+<meta http-equiv="Cache-Control" content="no-cache">
 <meta name="theme-color" content="#2b2118">
 <style>
 :root{
@@ -111,7 +112,7 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
 .legend{position:absolute;left:8px;bottom:20px;z-index:5;background:#fffdf8e6;border-radius:10px;padding:5px 8px;font-size:11px;color:var(--sub);line-height:1.5;box-shadow:0 1px 4px #0002}
 
 /* 하단 패널 */
-#panel{flex:none;height:min(46dvh,max(305px,36dvh));min-height:200px;max-height:82dvh;display:flex;flex-direction:column;background:var(--card);border-top:1px solid var(--line);
+#panel{flex:none;height:150px;min-height:120px;max-height:82dvh;display:flex;flex-direction:column;background:var(--card);border-top:1px solid var(--line);
   border-radius:16px 16px 0 0;margin-top:-12px;position:relative;z-index:4;box-shadow:0 -4px 14px #0002;padding-bottom:env(safe-area-inset-bottom)}
 #panel.anim{transition:height .22s ease}
 .grip{width:100%;border:0;background:none;padding:10px 0 10px;display:grid;place-items:center;touch-action:none;cursor:ns-resize}
@@ -1183,8 +1184,21 @@ $('#statusBtn').onclick=()=>{ setTab(tab==='status'?'search':'status'); if(tab==
 $('#q').addEventListener('focus',()=>{ if(tab!=='search') setTab('search'); });
 /* 아래 창: 위로 끌어올리면 커지고, 내리면 작아짐 */
 const panel=$('#panel');
-function panelSizes(){ const H=window.innerHeight; return {min:Math.min(Math.round(H*0.46),Math.max(305,Math.round(H*0.36))), max:Math.round(H*0.75)}; }
-function setPanel(which){ const z=panelSizes(); panel.classList.add('anim'); panel.style.height=(which==='max'?z.max:z.min)+'px'; setTimeout(()=>panel.classList.remove('anim'),260); }
+/* 작은 상태 높이 = 첫 번째 검색 결과 카드가 딱 다 보이는 높이 */
+let panelMode='min';
+function minFit(){
+  const H=window.innerHeight, list=$('#list'), card=list.querySelector('.card');
+  let need=150;
+  if(card){
+    const pTop=panel.getBoundingClientRect().top, lTop=list.getBoundingClientRect().top;
+    need=(lTop-pTop)+card.offsetTop-list.offsetTop+card.offsetHeight+12;
+    const cs=getComputedStyle(panel); need+=parseFloat(cs.paddingBottom)||0;
+  }
+  return Math.round(Math.min(H*0.55,Math.max(130,need)));
+}
+function panelSizes(){ const H=window.innerHeight; return {min:minFit(), max:Math.round(H*0.75)}; }
+function setPanel(which){ panelMode=which; const z=panelSizes(); panel.classList.add('anim'); panel.style.height=(which==='max'?z.max:z.min)+'px'; setTimeout(()=>panel.classList.remove('anim'),260); }
+function refitPanel(){ if(panelMode!=='min') return; const h=minFit(); if(Math.abs(panel.getBoundingClientRect().height-h)>2){ panel.classList.add('anim'); panel.style.height=h+'px'; setTimeout(()=>panel.classList.remove('anim'),260); } }
 (function(){
   let drag=null;
   const start=e=>{
@@ -1267,6 +1281,7 @@ function render(){
     L.innerHTML=h;
     L.querySelectorAll('.card').forEach(c=>c.onclick=e=>{ if(e.target.closest('.cstar,.gobtn')) return; select(c.dataset.id,false,true); });
     L.querySelectorAll('.gobtn').forEach(b=>b.onclick=e=>{ e.stopPropagation(); startRoute(b.dataset.go); });
+    requestAnimationFrame(refitPanel);
     L.querySelectorAll('.cstar').forEach(b=>b.onclick=e=>{ e.stopPropagation(); openFavPicker(b.dataset.k,b.dataset.n); });
     updateArrows();
   } else {
