@@ -659,12 +659,12 @@ let TEST=/test/i.test(location.hash||'')||/[?&]test/i.test(location.search||'');
 let WALK=/walk/i.test(location.hash||'')||/[?&]walk/i.test(location.search||'');
 let walkOff=null;
 function setFakeMe(px,py){
-  const [lat,lng]=px2ll(px,py); ME={lat,lng,acc:8,px,py}; placeOverlay(); updateDistances();
+  const [lat,lng]=px2ll(px,py); ME={lat,lng,acc:8,px,py}; snapMe(); placeOverlay(); updateDistances();
   if(chip && tab==='search'){ shown=chipPlaces(chip).slice(0,60); drawMarkers(); render(); }
 }
 function placeMe(){
   if(!ME){ meEl.style.display='none'; return; }
-  const [x,y]=toScreen(ME.px,ME.py);
+  const D=DISP||ME; const [x,y]=toScreen(D.px,D.py);
   meEl.style.display='block'; meEl.style.left=x+'px'; meEl.style.top=y+'px';
   const r=Math.max(12, ME.acc/GEO.s*(S*bw/VB.w));
   const acc=meEl.querySelector('.acc'); acc.style.width=acc.style.height=(2*r)+'px';
@@ -706,30 +706,55 @@ function startGPS(fromButton){
   if(TEST && !ME) setFakeMe(168,195);
   if(!('geolocation' in navigator)){ if(fromButton) toast('이 기기에서는 위치 기능을 쓸 수 없어요.'); return; }
   if(watchId!=null) return;
-  let gpsErrShown=false;
+  let gpsErrShown=false, lastGood=null, walkStart=performance.now();
   $('#locBtn').classList.add('on');
-  watchId=navigator.geolocation.watchPosition(pos=>{
+  const onPos=pos=>{
     if(TEST) return; // 지도 누르기 테스트 중에는 실제 GPS 무시
-    const {latitude:lat,longitude:lng,accuracy:acc}=pos.coords;
+    const {latitude:lat,longitude:lng,accuracy:acc0}=pos.coords, acc=acc0||50, now=performance.now();
+    // 방금 받은 정확한 위치보다 훨씬 부정확한 값이 끼어들면 무시 (점이 튀는 것 방지)
+    if(lastGood && acc>Math.max(40,lastGood.acc*2.5) && now-lastGood.t<15000) return;
+    if(!lastGood || acc<=Math.max(40,lastGood.acc*2.5) ) lastGood={acc,t:now};
     let [px,py]=ll2px(lat,lng), mlat=lat, mlng=lng;
     if(WALK){
-      if(!walkOff){ walkOff=[168-px,195-py]; toast('걷기 테스트: 지금 서 있는 곳을 이월드 정문으로 놓았어요. 걸으면 파란 점이 같이 움직여요',5000); }
+      // 처음 몇 초 동안은 더 정확한 위치가 오면 기준을 다시 잡음
+      const reanchor = walkOff && walkOff.acc>acc*1.8 && now-walkStart<20000;
+      if(!walkOff || reanchor){
+        if(!walkOff) toast('걷기 테스트: 지금 서 있는 곳을 이월드 정문으로 놓았어요. 걸으면 파란 점이 같이 움직여요',5000);
+        walkOff=[168-px,195-py]; walkOff.acc=acc;
+      }
       px+=walkOff[0]; py+=walkOff[1]; [mlat,mlng]=px2ll(px,py);
     }
-    ME={lat:mlat,lng:mlng,acc:acc||20,px,py};
+    ME={lat:mlat,lng:mlng,acc,px,py};
     if(pos.coords.heading!=null && !isNaN(pos.coords.heading) && pos.coords.speed>0.7 && compassSrc!=='device') heading=pos.coords.heading;
     const inside = px>60 && px<800 && py>50 && py<880;
     if(firstFix){
-      firstFix=false;
+      firstFix=false; snapMe();
       if(inside) focusPx(px,py,Math.max(S,WALK?5:3));
       else { const d=distM(ME.lat,ME.lng,...px2ll(420,450)); toast(`위치는 잘 잡혔어요. 지금은 이월드 밖이에요 (이월드까지 약 ${fmtDist(d)})`,4500); }
     }
-    placeOverlay(); updateDistances();
-  },err=>{
-    const msg={1:'위치 권한이 꺼져 있어요. 브라우저 설정에서 위치를 허용해 주세요.',2:'위치를 찾지 못했어요. 잠시 후 다시 눌러 보세요.',3:'위치 찾기 시간이 초과됐어요. 다시 눌러 보세요.'}[err.code]||'위치를 가져오지 못했어요.';
+    glideMe(); updateDistances();
+  };
+  const onErr=err=>{
+    if(err.code===3 && ME) return; // 이미 위치가 있으면 시간초과는 조용히 넘김
+    const msg={1:'위치 권한이 꺼져 있어요. 브라우저 설정에서 위치를 허용해 주세요.',2:'위치를 찾지 못했어요. 밖으로 나가면 더 잘 잡혀요.',3:'위치 찾는 데 시간이 걸리고 있어요. 실내보다 밖에서 더 빨라요.'}[err.code]||'위치를 가져오지 못했어요.';
     if(!gpsErrShown || fromButton){ toast(msg,3500); gpsErrShown=true; }
     if(err.code===1){ navigator.geolocation.clearWatch(watchId); watchId=null; $('#locBtn').classList.remove('on'); }
-  },{enableHighAccuracy:true,maximumAge:3000,timeout:20000});
+  };
+  // 1) 빠른 대략 위치 (와이파이·기지국, 최근 위치 재사용) → 바로 점 표시
+  try{ navigator.geolocation.getCurrentPosition(onPos,()=>{},{enableHighAccuracy:false,maximumAge:120000,timeout:4000}); }catch(e){}
+  // 2) 정확한 GPS 위치를 계속 받아서 다듬기
+  watchId=navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,maximumAge:0,timeout:15000});
+}
+/* 파란 점이 순간이동하지 않고 부드럽게 따라가도록 */
+let DISP=null, glideRAF=null;
+function snapMe(){ if(ME) DISP={px:ME.px,py:ME.py}; }
+function glideMe(){
+  if(!ME) return;
+  if(!DISP || Math.hypot(ME.px-DISP.px,ME.py-DISP.py)>150){ snapMe(); placeOverlay(); return; }
+  cancelAnimationFrame(glideRAF);
+  const x0=DISP.px,y0=DISP.py,x1=ME.px,y1=ME.py,t0=performance.now(),ms=500;
+  const step=t=>{ const k=Math.min(1,(t-t0)/ms), e=1-Math.pow(1-k,2); DISP={px:x0+(x1-x0)*e,py:y0+(y1-y0)*e}; placeMe(); if(k<1) glideRAF=requestAnimationFrame(step); };
+  glideRAF=requestAnimationFrame(step);
 }
 let compassSrc=null, compassOn=false;
 function listenCompass(){
@@ -1113,7 +1138,7 @@ function setTestMode(m){
   $('#testBtn').classList.toggle('on',m!=='off');
   $('#testBtn').textContent = m==='off' ? '테스트' : '테스트 중';
   if(m==='tap'){ setFakeMe(168,195); focusPx(168,195,Math.max(S,4)); toast('지도를 한 번 누르면 그 자리로 내 위치가 옮겨져요. 몸을 돌리면 화살표가 따라 돌아요',4500); }
-  else { ME=null; firstFix=true; placeOverlay(); updateDistances();
+  else { ME=null; DISP=null; firstFix=true; placeOverlay(); updateDistances();
     if(watchId!=null){ navigator.geolocation.clearWatch(watchId); watchId=null; } startGPS(true); // 다시 시작해서 바로 현재 위치 받기
     if(m==='walk') toast('위치를 잡는 중이에요… 잡히면 지금 서 있는 곳이 이월드 정문이 돼요',4000);
     else toast('테스트를 끝냈어요. 실제 위치로 돌아왔어요',2500); }
