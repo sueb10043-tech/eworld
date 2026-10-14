@@ -54,6 +54,11 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
 .mk .lab{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;background:var(--ink);color:#fff8ec;
   font-size:12.5px;font-weight:700;padding:4px 8px;border-radius:8px;box-shadow:0 2px 6px #0005;display:none}
 .mk.sel .lab{display:block}
+.mk .ea{display:none;position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;text-align:center;font-size:13px;line-height:1;color:var(--accent);pointer-events:none}
+.mk.edge{opacity:.92}
+.mk.edge .ea{display:block}
+.mk.edge .ring{display:none}
+.mk.edge .pin{transform:scale(.85)}
 .mk .st{position:absolute;right:-5px;top:-5px;width:12px;height:12px;border-radius:50%;border:2px solid #fff}
 @keyframes ping{0%{transform:scale(.8);opacity:1}100%{transform:scale(2.4);opacity:0}}
 /* 내 위치 */
@@ -563,8 +568,16 @@ function placeOverlay(){
     const [x,y]=toScreen(px,py);
     el.style.display=''; el.style.left=x+'px'; el.style.top=y+'px';
   }
+  const vw=vp.clientWidth, vh=vp.clientHeight, pad=24;
   for(const el of mkLayer.children){
-    const p=BY_ID[el.dataset.id]; const [x,y]=toScreen(p.px,p.py);
+    const p=BY_ID[el.dataset.id]; let [x,y]=toScreen(p.px,p.py);
+    const out = x<pad||x>vw-pad||y<pad||y>vh-pad;
+    el.classList.toggle('edge',out);
+    if(out){ // 화면 밖이면 가장자리에 방향 화살표로 표시
+      const ang=Math.atan2(y-vh/2,x-vw/2);
+      x=Math.min(vw-pad,Math.max(pad,x)); y=Math.min(vh-pad,Math.max(pad,y));
+      el.querySelector('.ea').style.transform=`rotate(${ang*180/Math.PI+90}deg)`;
+    }
     el.style.left=x+'px'; el.style.top=y+'px';
   }
   placeMe();
@@ -583,7 +596,7 @@ function drawMarkers(){
     const b=document.createElement('button');
     b.type='button'; b.className='mk'+(p.id===selId?' sel':''); b.dataset.id=p.id;
     b.innerHTML=`<span class="ring"></span><span class="pin" style="background:${ZONES[p.zone].color}">${esc(p.num||pinIcon(p.cat))}</span>`+
-      (st?`<span class="st" style="background:var(--${st.k})"></span>`:'')+`<span class="lab">${esc(p.name)}</span>`;
+      (st?`<span class="st" style="background:var(--${st.k})"></span>`:'')+`<span class="lab">${esc(p.name)}</span><span class="ea">▲</span>`;
     b.addEventListener('click',e=>{ if(moved) return; e.stopPropagation(); select(p.id,true,false); });
     mkLayer.appendChild(b);
   });
@@ -609,26 +622,40 @@ function placeMe(){
   const cone=meEl.querySelector('.cone');
   if(heading!=null){ cone.style.display='block'; cone.style.transform=`rotate(${heading}deg)`; } else cone.style.display='none';
 }
-function startGPS(){
-  if(TEST){
-    $('#locBtn').classList.add('on');
-    if(!ME) setFakeMe(168,195);
-    focusPx(ME.px,ME.py,S);
-    toast('테스트 모드: 지도를 한 번 누르면 그 자리로 내 위치가 옮겨져요',3500);
-    return;
-  }
-  if(!('geolocation' in navigator)){ toast('이 기기에서는 위치 기능을 쓸 수 없어요.'); return; }
-  // 나침반 (아이폰은 허락 필요)
+/* 나침반: 아이폰은 화면을 한 번 만져야 허락 창을 띄울 수 있음 */
+let compassAsked=false;
+function askCompass(){
+  if(compassAsked) return; compassAsked=true;
   try{
     if(typeof DeviceOrientationEvent!=='undefined' && typeof DeviceOrientationEvent.requestPermission==='function'){
       DeviceOrientationEvent.requestPermission().then(r=>{ if(r==='granted') listenCompass(); }).catch(()=>{});
     } else listenCompass();
   }catch(e){}
-  if(watchId!=null){ // 이미 켜져 있으면 내 위치로 이동만
-    if(ME) focusPx(ME.px,ME.py,Math.max(S,4.5)); else toast('위치를 찾는 중이에요…');
+}
+document.addEventListener('pointerup',askCompass,{once:true,capture:true});
+/* 내 위치 버튼: 내 위치로 다시 이동 */
+function goMe(){
+  askCompass();
+  if(ME){
+    const inside = ME.px>60 && ME.px<800 && ME.py>50 && ME.py<880;
+    if(inside) focusPx(ME.px,ME.py,Math.max(S,3));
+    else { const d=distM(ME.lat,ME.lng,...px2ll(420,450)); toast(`위치는 잘 잡혔어요. 지금은 이월드 밖이에요 (이월드까지 약 ${fmtDist(d)})`,4500); }
     return;
   }
+  if(watchId==null && !TEST) startGPS(true);
   toast('위치를 찾는 중이에요…');
+}
+/* 페이지를 열면 자동으로 내 위치 표시 시작 */
+function startGPS(fromButton){
+  if(TEST){
+    $('#locBtn').classList.add('on');
+    if(!ME) setFakeMe(168,195);
+    if(fromButton) toast('테스트 모드: 지도를 한 번 누르면 그 자리로 내 위치가 옮겨져요',3500);
+    return;
+  }
+  if(!('geolocation' in navigator)){ if(fromButton) toast('이 기기에서는 위치 기능을 쓸 수 없어요.'); return; }
+  if(watchId!=null) return;
+  let gpsErrShown=false;
   $('#locBtn').classList.add('on');
   watchId=navigator.geolocation.watchPosition(pos=>{
     const {latitude:lat,longitude:lng,accuracy:acc}=pos.coords;
@@ -638,13 +665,13 @@ function startGPS(){
     const inside = px>60 && px<800 && py>50 && py<880;
     if(firstFix){
       firstFix=false;
-      if(inside) focusPx(px,py,Math.max(S,4.5));
+      if(inside) focusPx(px,py,Math.max(S,3));
       else { const d=distM(ME.lat,ME.lng,...px2ll(420,450)); toast(`위치는 잘 잡혔어요. 지금은 이월드 밖이에요 (이월드까지 약 ${fmtDist(d)})`,4500); }
     }
     placeOverlay(); updateDistances();
   },err=>{
     const msg={1:'위치 권한이 꺼져 있어요. 브라우저 설정에서 위치를 허용해 주세요.',2:'위치를 찾지 못했어요. 잠시 후 다시 눌러 보세요.',3:'위치 찾기 시간이 초과됐어요. 다시 눌러 보세요.'}[err.code]||'위치를 가져오지 못했어요.';
-    toast(msg,3500);
+    if(!gpsErrShown || fromButton){ toast(msg,3500); gpsErrShown=true; }
     if(err.code===1){ navigator.geolocation.clearWatch(watchId); watchId=null; $('#locBtn').classList.remove('on'); }
   },{enableHighAccuracy:true,maximumAge:3000,timeout:20000});
 }
@@ -663,7 +690,7 @@ function listenCompass(){
   if('ondeviceorientationabsolute' in window) window.addEventListener('deviceorientationabsolute',handler,true);
   else window.addEventListener('deviceorientation',handler,true);
 }
-$('#locBtn').onclick=startGPS;
+$('#locBtn').onclick=goMe;
 
 function distM(la1,lo1,la2,lo2){
   const R=6371000, t=Math.PI/180, dla=(la2-la1)*t, dlo=(lo2-lo1)*t;
@@ -827,7 +854,7 @@ function runSearch(focus=true){
   if(focus && !shown.length && (query||chip)) toast('찾는 장소가 없어요. 다른 이름으로 검색해 보세요.');
   setTab('search');
 }
-function select(id,scrollList,zoom=true){
+function select(id,scrollList,zoom=false){
   selId=id; const p=BY_ID[id];
   for(const el of mkLayer.children) el.classList.toggle('sel',el.dataset.id===id);
   const el=[...mkLayer.children].find(e=>e.dataset.id===id); if(el) mkLayer.appendChild(el);
@@ -917,7 +944,7 @@ function render(){
       h+=shown.map(cardHTML).join('');
     }
     L.innerHTML=h;
-    L.querySelectorAll('.card').forEach(c=>c.onclick=()=>select(c.dataset.id,false));
+    L.querySelectorAll('.card').forEach(c=>c.onclick=()=>select(c.dataset.id,false,false));
     updateArrows();
   } else {
     let h=bannerHTML();
@@ -956,7 +983,7 @@ function render(){
     L.querySelectorAll('.go[data-pid]').forEach(b=>b.onclick=()=>{
       const id=b.dataset.pid; if(!id) return;
       chip=null; query=BY_ID[id].name; $('#q').value=query; drawChips();
-      shown=[BY_ID[id]]; selId=id; drawMarkers(); setTab('search'); select(id,false,true); setPanel('min');
+      shown=[BY_ID[id]]; selId=id; drawMarkers(); setTab('search'); select(id,false,false); setPanel('min');
     });
   }
 }
@@ -980,6 +1007,7 @@ buildLabels();
 drawChips();
 layout(false);
 render();
+startGPS(false);
 loadLive(false);
 setInterval(()=>{ if(!document.hidden) loadLive(false); }, AUTO_REFRESH_MIN*60*1000);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden && LIVE){ const age=Date.now()-new Date(LIVE.fetchedAt).getTime(); if(age>AUTO_REFRESH_MIN*60*1000) loadLive(false);} });
