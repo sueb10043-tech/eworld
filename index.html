@@ -957,6 +957,56 @@ let FAVS={};
 try{ FAVS=JSON.parse(loadLS('ew_favs2','{}'))||{}; }catch(e){ FAVS={}; }
 try{ const old=JSON.parse(loadLS('ew_favs','[]')); if(Array.isArray(old)) old.forEach(n=>{ if(!FAVS['a:'+n]) FAVS['a:'+n]=FAV_COLORS[0][0]; }); saveLS('ew_favs','[]'); }catch(e){}
 function saveFavs(){ saveLS('ew_favs2',JSON.stringify(FAVS)); }
+/* ---- 구글 시트 동기화 ---- */
+async function gasCall(params){
+  if(!GAS_URL) throw new Error('no gas');
+  const q=Object.entries(params).map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v)).join('&');
+  const url=GAS_URL+(GAS_URL.includes('?')?'&':'?')+q+'&t='+Date.now();
+  let d;
+  try{ const r=await fetch(url,{redirect:'follow'}); d=await r.json(); }
+  catch(e){ d=await jsonp(url); }
+  if(!d || !d.ok) throw new Error((d&&d.error)||'저장 실패');
+  return d;
+}
+function nameOfKey(k){ return k.startsWith('p:') ? ((BY_ID[k.slice(2)]||{}).name||'') : k.slice(2); }
+let favPending=[]; try{ favPending=JSON.parse(loadLS('ew_favs_pending','[]'))||[]; }catch(e){ favPending=[]; }
+function savePending(){ saveLS('ew_favs_pending',JSON.stringify(favPending)); }
+function queueFav(op,key,color){
+  favPending=favPending.filter(x=>x.key!==key); favPending.push({op,key,color:color||''}); savePending();
+  flushFavs();
+}
+let flushing=false;
+async function flushFavs(){
+  if(flushing || !favPending.length) return; flushing=true;
+  try{
+    while(favPending.length){
+      const x=favPending[0];
+      await gasCall({mode:'fav',op:x.op,key:x.key,color:x.color,name:nameOfKey(x.key)});
+      favPending.shift(); savePending();
+    }
+  }catch(e){ toast('인터넷이 불안정해서 이 휴대폰에만 먼저 저장했어요. 연결되면 자동으로 시트에 저장돼요',3500); }
+  flushing=false;
+}
+async function syncFavs(){
+  if(!GAS_URL) return;
+  try{
+    await flushFavs();
+    if(favPending.length) return; // 아직 못 보낸 변경이 있으면 시트 값으로 덮어쓰지 않음
+    const d=await gasCall({mode:'favs'});
+    const remote={}; for(const k in d.favs) remote[k]=d.favs[k].color;
+    const firstSync = loadLS('ew_favs_synced','')!=='1';
+    if(firstSync && Object.keys(FAVS).length){ // 처음 연결할 때 이 휴대폰에만 있던 즐겨찾기를 시트로 올리기
+      for(const k in FAVS) if(remote[k]!==FAVS[k]) favPending.push({op:'set',key:k,color:FAVS[k]});
+      for(const k in remote) if(!(k in FAVS)) FAVS[k]=remote[k];
+      savePending(); saveFavs(); saveLS('ew_favs_synced','1'); await flushFavs();
+    } else {
+      saveLS('ew_favs_synced','1');
+      if(JSON.stringify(remote)===JSON.stringify(FAVS)) return;
+      FAVS=remote; saveFavs();
+    }
+    afterFavChange();
+  }catch(e){ /* 시트 연결 실패 시 휴대폰에 저장된 즐겨찾기로 계속 사용 */ }
+}
 /* 본지도·주주팜 상세지도에 겹쳐 있는 항목은 하나로 */
 const CANON={A18:'Z2',A19:'Z1',A22:'Z3',A25:'Z9',A26:'ZB',A24:'ZS2',ZF2:'A13'};
 const canon=id=>CANON[id]||id;
@@ -964,7 +1014,7 @@ function favKeyApi(a){ const pid=PLACE_OF[a.id]; return pid ? 'p:'+canon(pid) : 
 function favColor(key){ return FAVS[key]||null; }
 function migrateFavs(){ // 예전에 홈페이지 이름으로 저장한 즐겨찾기를 장소로 옮기기
   if(!LIVE) return; let ch=false;
-  LIVE.items.forEach(a=>{ const pid=PLACE_OF[a.id]; const k='a:'+a.name; if(pid && FAVS[k]){ FAVS['p:'+canon(pid)]=FAVS['p:'+canon(pid)]||FAVS[k]; delete FAVS[k]; ch=true; } });
+  LIVE.items.forEach(a=>{ const pid=PLACE_OF[a.id]; const k='a:'+a.name; if(pid && FAVS[k]){ const nk='p:'+canon(pid); FAVS[nk]=FAVS[nk]||FAVS[k]; delete FAVS[k]; ch=true; queueFav('del',k); queueFav('set',nk,FAVS[nk]); } });
   if(ch) saveFavs();
 }
 /* 별 색 고르기 창 */
@@ -977,8 +1027,8 @@ function openFavPicker(key,name){
   box.style.display='flex';
   const close=()=>{ box.style.display='none'; };
   box.onclick=e=>{ if(e.target===box) close(); };
-  box.querySelectorAll('.sw').forEach(b=>b.onclick=()=>{ FAVS[key]=b.dataset.c; saveFavs(); close(); afterFavChange(); });
-  const d=box.querySelector('.fpdel'); if(d) d.onclick=()=>{ delete FAVS[key]; saveFavs(); close(); afterFavChange(); };
+  box.querySelectorAll('.sw').forEach(b=>b.onclick=()=>{ FAVS[key]=b.dataset.c; saveFavs(); close(); afterFavChange(); queueFav('set',key,b.dataset.c); });
+  const d=box.querySelector('.fpdel'); if(d) d.onclick=()=>{ delete FAVS[key]; saveFavs(); close(); afterFavChange(); queueFav('del',key); };
   box.querySelector('.fpx').onclick=close;
 }
 function afterFavChange(){ buildFavStars(); placeOverlay(); render(); }
@@ -1162,8 +1212,9 @@ if(TEST||WALK){ $('#testBtn').classList.add('on'); $('#testBtn').textContent='�
 listenCompass(); // 허락이 필요 없는 기기(안드로이드 등)는 바로 방향 받기 시작
 startGPS(false);
 loadLive(false);
+syncFavs();
 setInterval(()=>{ if(!document.hidden) loadLive(false); }, AUTO_REFRESH_MIN*60*1000);
-document.addEventListener('visibilitychange',()=>{ if(!document.hidden && LIVE){ const age=Date.now()-new Date(LIVE.fetchedAt).getTime(); if(age>AUTO_REFRESH_MIN*60*1000) loadLive(false);} });
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) syncFavs(); if(!document.hidden && LIVE){ const age=Date.now()-new Date(LIVE.fetchedAt).getTime(); if(age>AUTO_REFRESH_MIN*60*1000) loadLive(false);} });
 </script>
 </body>
 </html>
