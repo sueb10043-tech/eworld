@@ -32,7 +32,10 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
 .tmi button small{display:block;font-weight:500;font-size:12.5px;color:var(--sub);margin-top:3px;line-height:1.45}
 .tmi button.on{border:2px solid var(--ink)}
 .search{margin-top:8px;display:flex;gap:6px}
-.search input{flex:1;min-width:0;border:0;border-radius:12px;padding:11px 12px;font-size:16px;background:#fff8ec;color:var(--ink);outline:none}
+.qwrap{flex:1;min-width:0;position:relative}
+.search input{width:100%;border:0;border-radius:12px;padding:11px 42px 11px 12px;font-size:16px;background:#fff8ec;color:var(--ink);outline:none}
+.search #clear{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;border-radius:50%;background:#e9dfcd;color:var(--ink);font-size:15px;font-weight:800;padding:0;display:grid;place-items:center}
+.search #statusBtn.on{background:#ffb35c;color:var(--ink);font-weight:800}
 .search button{border:0;border-radius:12px;padding:0 12px;background:#ffffff1f;color:#fff8ec;font-size:14px}
 .chips{display:flex;gap:6px;overflow-x:auto;margin-top:8px;padding-bottom:2px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
@@ -108,10 +111,10 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
 .legend{position:absolute;left:8px;bottom:20px;z-index:5;background:#fffdf8e6;border-radius:10px;padding:5px 8px;font-size:11px;color:var(--sub);line-height:1.5;box-shadow:0 1px 4px #0002}
 
 /* 하단 패널 */
-#panel{flex:none;height:19dvh;min-height:110px;max-height:82dvh;display:flex;flex-direction:column;background:var(--card);border-top:1px solid var(--line);
+#panel{flex:none;height:min(46dvh,max(305px,36dvh));min-height:200px;max-height:82dvh;display:flex;flex-direction:column;background:var(--card);border-top:1px solid var(--line);
   border-radius:16px 16px 0 0;margin-top:-12px;position:relative;z-index:4;box-shadow:0 -4px 14px #0002;padding-bottom:env(safe-area-inset-bottom)}
 #panel.anim{transition:height .22s ease}
-.grip{width:100%;border:0;background:none;padding:9px 0 6px;display:grid;place-items:center;touch-action:none;cursor:ns-resize}
+.grip{width:100%;border:0;background:none;padding:10px 0 10px;display:grid;place-items:center;touch-action:none;cursor:ns-resize}
 .grip i{display:block;width:40px;height:5px;border-radius:9px;background:#d5c8b2}
 .tabs{display:flex;gap:4px;padding:0 12px 8px;touch-action:none}
 .tab{flex:1;border:0;border-radius:10px;padding:8px;background:#f1e9da;color:var(--sub);font-size:14px;font-weight:700}
@@ -160,8 +163,8 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
     <div class="live" id="live"><i class="dot"></i><span id="liveText">운영정보 확인 중</span><button id="refresh" type="button">새로고침</button><button id="testBtn" type="button">테스트</button></div>
   </div>
   <form class="search" id="searchForm" autocomplete="off">
-    <input id="q" type="search" placeholder="어트랙션·장소 검색" enterkeyhint="search">
-    <button type="button" id="clear">지우기</button>
+    <div class="qwrap"><input id="q" type="text" placeholder="어트랙션·장소 검색" enterkeyhint="search"><button type="button" id="clear" aria-label="지우기">✕</button></div>
+    <button type="button" id="statusBtn">운영 현황</button>
   </form>
   <div class="chips" id="chips"></div>
 </header>
@@ -188,8 +191,6 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
   <div id="routeBar"><div class="rb-t"><b id="rbName"></b><span id="rbInfo"></span></div><button type="button" id="rbOff">경로 끄기</button></div>
   <div class="zoombar">
     <button type="button" id="locBtn" aria-label="내 위치">내<br>위치</button>
-    <button type="button" id="zin" aria-label="확대">+</button>
-    <button type="button" id="zout" aria-label="축소">−</button>
     <button type="button" id="zfit" class="small" aria-label="전체 보기">전체</button>
   </div>
 </div>
@@ -197,10 +198,6 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
 <div id="favPicker"></div>
 <section id="panel">
   <button class="grip" id="grip" type="button" aria-label="목록 크기 바꾸기"><i></i></button>
-  <div class="tabs">
-    <button class="tab on" data-tab="search" type="button">검색 결과</button>
-    <button class="tab" data-tab="status" type="button">오늘 운영현황</button>
-  </div>
   <div class="list" id="list"></div>
 </section>
 
@@ -586,8 +583,6 @@ vp.addEventListener('click',e=>{
     setFakeMe(VB.x+(x-TX)/(bw*S)*VB.w, VB.y+(y-TY)/(bh*S)*VB.h); }
   if(t-lastTap<320){ const r=vp.getBoundingClientRect(); zoomAround(S*2,e.clientX-r.left,e.clientY-r.top,260); lastTap=0; } else lastTap=t;
 });
-$('#zin').onclick=()=>zoomAround(S*1.6,vp.clientWidth/2,vp.clientHeight/2,250);
-$('#zout').onclick=()=>zoomAround(S/1.6,vp.clientWidth/2,vp.clientHeight/2,250);
 $('#zfit').onclick=()=>homeView(true);
 new ResizeObserver(()=>layout(true)).observe(vp);
 
@@ -624,17 +619,25 @@ function buildFavStars(){
 }
 function placeOverlay(){
   const sc = S*bw/VB.w; // 화면 px per 지도 px
-  for(const el of lbLayer.children){
+  const boxes=[]; // 이름끼리 겹치면 덜 중요한 쪽은 숨김 (확대하면 다시 보임)
+  const vw0=vp.clientWidth, vh0=vp.clientHeight;
+  const els=[...lbLayer.children].sort((a,b)=>(a.dataset.z?0:+a.dataset.l)-(b.dataset.z?0:+b.dataset.l));
+  for(const el of els){
     let px,py,show=true;
-    if(el.dataset.z){ [px,py]=ZONE_LABEL_POS[el.dataset.z]; show = sc<3.2; }
+    if(el.dataset.z){ [px,py]=ZONE_LABEL_POS[el.dataset.z]; show = sc<1.3; }
     else {
       const p=BY_ID[el.dataset.id]; px=p.px; py=p.py;
       const l=+el.dataset.l;
-      show = (l===1 && sc>=1.7) || (l===2 && sc>=2.6) || (l===3 && sc>=4.2);
+      show = (l===1 && sc>=0.75) || (l===2 && sc>=1.3) || (l===3 && sc>=2.0);
       if(shownIds.has(p.id) || FAVS['p:'+p.id]) show=false;
     }
     if(!show){ el.style.display='none'; continue; }
     const [x,y]=toScreen(px,py);
+    if(x<-80||x>vw0+80||y<-30||y>vh0+30){ el.style.display='none'; continue; }
+    if(!el._w) el._w=(el.textContent.length*(el.dataset.z?15:11.5))+16;
+    const w=el._w, h=el.dataset.z?24:16, bx=[x-w/2,y-h/2,x+w/2,y+h/2];
+    if(!el.dataset.z && boxes.some(b=>bx[0]<b[2]&&bx[2]>b[0]&&bx[1]<b[3]&&bx[3]>b[1])){ el.style.display='none'; continue; }
+    boxes.push(bx);
     el.style.display=''; el.style.left=x+'px'; el.style.top=y+'px';
   }
   const vw=vp.clientWidth, vh=vp.clientHeight, pad=24;
@@ -654,7 +657,7 @@ function placeOverlay(){
     const p=BY_ID[el.dataset.id]; const [x,y]=toScreen(p.px,p.py);
     el.style.left=x+'px'; el.style.top=y+'px';
     el.style.display=shownIds.has(p.id)?'none':'';
-    el.querySelector('span').style.display = scr>=1.7 ? '' : 'none';
+    el.querySelector("span").style.display = scr>=0.75 ? "" : "none";
   }
   placeMe();
 }
@@ -1175,11 +1178,12 @@ function openFavPicker(key,name){
   box.querySelector('.fpx').onclick=close;
 }
 function afterFavChange(){ buildFavStars(); placeOverlay(); render(); }
-function setTab(t){ tab=t; document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===t)); render(); }
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+function setTab(t){ tab=t; $('#statusBtn').classList.toggle('on',t==='status'); $('#statusBtn').textContent=t==='status'?'검색 결과':'운영 현황'; render(); }
+$('#statusBtn').onclick=()=>{ setTab(tab==='status'?'search':'status'); if(tab==='status' && panel.getBoundingClientRect().height<panelSizes().min+5) setPanel('max'); };
+$('#q').addEventListener('focus',()=>{ if(tab!=='search') setTab('search'); });
 /* 아래 창: 위로 끌어올리면 커지고, 내리면 작아짐 */
 const panel=$('#panel');
-function panelSizes(){ const H=window.innerHeight; return {min:Math.max(110,Math.round(H*0.19)), max:Math.round(H*0.72)}; }
+function panelSizes(){ const H=window.innerHeight; return {min:Math.min(Math.round(H*0.46),Math.max(305,Math.round(H*0.36))), max:Math.round(H*0.75)}; }
 function setPanel(which){ const z=panelSizes(); panel.classList.add('anim'); panel.style.height=(which==='max'?z.max:z.min)+'px'; setTimeout(()=>panel.classList.remove('anim'),260); }
 (function(){
   let drag=null;
@@ -1201,11 +1205,10 @@ function setPanel(which){ const z=panelSizes(); panel.classList.add('anim'); pan
     setPanel(h>(startH<(z.min+z.max)/2 ? z.min+40 : z.max-40)?'max':'min');
   };
   $('#grip').addEventListener('pointerdown',start);
-  document.querySelector('.tabs').addEventListener('pointerdown',start);
   window.addEventListener('pointerup',end); window.addEventListener('pointercancel',end);
 })();
 // 드래그 직후 탭이 눌리는 것 방지
-document.querySelectorAll('.tab').forEach(b=>{ b.addEventListener('click',e=>{ if(panel.dataset.justDragged){ e.stopImmediatePropagation(); } },true); });
+
 
 function pillHTML(st){
   if(!st) return '';
@@ -1280,29 +1283,43 @@ function render(){
       <button type="button" class="chip ${sf==='fav'?'on':''}" data-f="fav">★ 즐겨찾기 ${favCnt}</button>
       <button type="button" class="chip ${sf==='off'?'on':''}" data-f="off">운휴·종료만 ${offs}</button></div>
       <div class="hint" style="padding:2px 4px 0;font-size:12.5px">이월드 홈페이지 어트랙션 목록 · ${esc((LIVE.fetchedAt||'').slice(5,16).replace('T',' '))} 기준</div>`;
-    const groups={};
-    items.filter(x=> sf==='all' || (sf==='off'&&x.st.k==='off') || (sf==='fav'&&isFav(x)))
-      .forEach(x=>{(groups[x.a.zone||'기타']=groups[x.a.zone||'기타']||[]).push(x)});
-    const order=['판타지월드','다이나믹월드','어드벤처월드','매직월드'];
-    Object.keys(groups).sort((a,b)=>(order.indexOf(a)+99)%99-(order.indexOf(b)+99)%99).forEach(z=>{
-      h+=`<div class="sec">${esc(z)} <span class="cnt">${groups[z].length}</span></div>`;
-      groups[z].forEach(({a,st,pid})=>{
-        const fk=favKeyApi(a), fc=FAVS[fk];
-        const hi=heightInfo(a);
-        h+=`<div class="row${pid&&canon(pid)===selId?' selrow':''}"><button type="button" class="star${fc?' on':''}" data-k="${fk}" data-n="${esc(a.name)}" aria-label="즐겨찾기" style="${fc?`color:${fc}`:''}">${fc?'★':'☆'}</button>
+    const rowApi=({a,st,pid})=>{
+      const fk=favKeyApi(a), fc=FAVS[fk], hi=heightInfo(a);
+      return `<div class="row${pid&&canon(pid)===selId?' selrow':''}"><button type="button" class="star${fc?' on':''}" data-k="${fk}" data-n="${esc(a.name)}" aria-label="즐겨찾기" style="${fc?`color:${fc}`:''}">${fc?'★':'☆'}</button>
           <div class="nm" data-pid="${pid?canon(pid):''}">${esc(a.name)}<small>${esc(a.detail||'')}${st.sub?(a.detail?' · ':'')+esc(st.sub):''}${pid?'':' · 지도 위치 미등록'}</small>${hi?`<small class="hgt">📏 ${esc(hi)}</small>`:''}</div>
           <span class="pill ${st.k}">${esc(st.label)}</span></div>`;
-      });
-    });
-    if(sf==='fav' && otherFavs.length){
-      h+=`<div class="sec">그 밖의 즐겨찾기 <span class="cnt">${otherFavs.length}</span></div>`;
-      otherFavs.forEach(p=>{
-        const fk='p:'+p.id, fc=FAVS[fk];
-        h+=`<div class="row"><button type="button" class="star on" data-k="${fk}" data-n="${esc(p.name)}" style="color:${fc}">★</button>
+    };
+    const rowPlace=p=>{
+      const fk='p:'+p.id, fc=FAVS[fk];
+      return `<div class="row${p.id===selId?' selrow':''}"><button type="button" class="star on" data-k="${fk}" data-n="${esc(p.name)}" style="color:${fc}">★</button>
           <div class="nm" data-pid="${p.id}">${esc(p.name)}<small>${esc(ZONES[p.zone].name)}${p.num&&p.zone!=='T'?' '+esc(p.num)+'번':''}${p.note?' · '+esc(p.note):''}</small></div></div>`;
+    };
+    const order=['판타지월드','다이나믹월드','어드벤처월드','매직월드'];
+    const zo=z=>(order.indexOf(z)+99)%99;
+    let any=false;
+    if(sf==='fav'){
+      // 즐겨찾기: 별 색 순서(노랑 → 빨강 → 분홍 → 보라 → 파랑 → 청록 → 초록 → 검정)로 묶어서 보여 주기
+      const list=[];
+      items.filter(isFav).forEach(x=>list.push({c:FAVS[favKeyApi(x.a)],z:zo(x.a.zone),html:rowApi(x)}));
+      otherFavs.forEach(p=>list.push({c:FAVS['p:'+p.id],z:zo(ZONES[p.zone].name),html:rowPlace(p)}));
+      const ci=c=>{ const i=FAV_COLORS.findIndex(f=>f[0]===c); return i<0?99:i; };
+      list.sort((x,y)=>ci(x.c)-ci(y.c)||x.z-y.z);
+      let cur=null;
+      list.forEach(x=>{
+        if(x.c!==cur){ cur=x.c; const n=(FAV_COLORS.find(f=>f[0]===cur)||[0,'기타'])[1];
+          h+=`<div class="sec"><span style="color:${cur};font-size:16px">★</span> ${esc(n)} <span class="cnt">${list.filter(y=>y.c===cur).length}</span></div>`; }
+        h+=x.html; any=true;
+      });
+    } else {
+      const groups={};
+      items.filter(x=> sf==='all' || (sf==='off'&&x.st.k==='off'))
+        .forEach(x=>{(groups[x.a.zone||'기타']=groups[x.a.zone||'기타']||[]).push(x)});
+      Object.keys(groups).sort((a,b)=>zo(a)-zo(b)).forEach(z=>{
+        h+=`<div class="sec">${esc(z)} <span class="cnt">${groups[z].length}</span></div>`;
+        groups[z].forEach(x=>{ h+=rowApi(x); any=true; });
       });
     }
-    if(!Object.keys(groups).length && !(sf==='fav'&&otherFavs.length)) h+= sf==='fav'
+    if(!any) h+= sf==='fav'
       ? '<div class="hint">☆를 누르면 즐겨찾기에 추가돼요. 검색 결과에서도 추가할 수 있어요.</div>'
       : '<div class="hint">해당하는 어트랙션이 없어요.</div>';
     L.innerHTML=h;
