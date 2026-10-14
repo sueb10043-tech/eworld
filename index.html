@@ -26,6 +26,11 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
 .live .dot{width:8px;height:8px;border-radius:50%;background:#888}
 .live.ok .dot{background:#4fd18b}.live.err .dot{background:#ff6b5e}.live.loading .dot{background:#ffc94d}
 .live button{background:#ffffff1f;border:0;border-radius:8px;padding:4px 8px;font-size:11.5px;color:#fff8ec}
+.live #testBtn.on{background:#ffb35c;color:var(--ink);font-weight:800}
+.tmi{display:flex;flex-direction:column;gap:8px}
+.tmi button{border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px;text-align:left;font-size:15px;font-weight:800}
+.tmi button small{display:block;font-weight:500;font-size:12.5px;color:var(--sub);margin-top:3px;line-height:1.45}
+.tmi button.on{border:2px solid var(--ink)}
 .search{margin-top:8px;display:flex;gap:6px}
 .search input{flex:1;min-width:0;border:0;border-radius:12px;padding:11px 12px;font-size:16px;background:#fff8ec;color:var(--ink);outline:none}
 .search button{border:0;border-radius:12px;padding:0 12px;background:#ffffff1f;color:#fff8ec;font-size:14px}
@@ -39,7 +44,22 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
 #viewport.drag{cursor:grabbing}
 #stage{position:absolute;left:0;top:0;transform-origin:0 0}
 #stage svg{display:block;width:100%;height:100%}
-#labels,#markers{position:absolute;inset:0;pointer-events:none}
+#labels,#markers,#favs{position:absolute;inset:0;pointer-events:none}
+.fv{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;border:0;background:none;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:center}
+.fv b{font-size:24px;line-height:1;text-shadow:0 0 2px #fff,0 0 2px #fff,0 0 3px #fff,0 1px 3px #0006}
+.fv span{font-size:11.5px;font-weight:800;color:var(--ink);white-space:nowrap;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 2px #fff;margin-top:-1px}
+#favPicker{position:fixed;inset:0;z-index:50;background:#0006;display:none;align-items:flex-end;justify-content:center}
+.fpbox{background:var(--card);width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
+.fpt{font-size:13px;color:var(--sub);font-weight:700}
+.fpn{font-size:18px;font-weight:800;margin:2px 0 12px}
+.fps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.sw{border:1px solid var(--line);background:#fff;border-radius:12px;padding:8px 0 6px;font-size:28px;line-height:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.sw small{font-size:11.5px;color:var(--sub);font-weight:700}
+.sw.on{border:2px solid var(--ink)}
+.fpb{display:flex;gap:8px;margin-top:12px}
+.fpb button{flex:1;border:0;border-radius:12px;padding:12px;font-weight:800;font-size:15px;background:#f1e9da}
+.fpb .fpdel{background:var(--off-bg);color:var(--off)}
+.cstar{flex:none;border:0;background:none;font-size:24px;line-height:1;padding:2px 0 0;color:#c9b99c;cursor:pointer;align-self:flex-start}
 .zl{position:absolute;transform:translate(-50%,-50%);font-weight:900;font-size:15px;letter-spacing:-.3px;white-space:nowrap;
   color:#fff;padding:3px 9px;border-radius:999px;box-shadow:0 1px 4px #0004;opacity:.95}
 .pl{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:3px;white-space:nowrap;font-size:11.5px;font-weight:700;
@@ -63,11 +83,13 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
 @keyframes ping{0%{transform:scale(.8);opacity:1}100%{transform:scale(2.4);opacity:0}}
 /* 내 위치 */
 #me{position:absolute;left:0;top:0;pointer-events:none;display:none}
-#me .acc{position:absolute;border-radius:50%;background:#1a73e822;border:1px solid #1a73e855;transform:translate(-50%,-50%)}
-#me .cone{position:absolute;left:0;top:0;width:0;height:0;display:none}
-#me .cone::before{content:"";position:absolute;left:-22px;top:-46px;width:44px;height:46px;
-  background:radial-gradient(ellipse at 50% 100%,#1a73e8aa,#1a73e800 70%);clip-path:polygon(50% 100%,0 0,100% 0)}
-#me .dotme{position:absolute;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;background:var(--me);border:3px solid #fff;box-shadow:0 1px 5px #0006}
+#me .acc{position:absolute;border-radius:50%;background:#2f6ff012;border:1px solid #2f6ff033;transform:translate(-50%,-50%)}
+#me .glow{position:absolute;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;
+  background:radial-gradient(circle,#2f6ff0aa 0,#2f6ff055 30%,#2f6ff022 55%,#2f6ff010 75%,#2f6ff000 100%)}
+#me .hd{position:absolute;left:0;top:0;width:0;height:0;display:none;transition:transform .15s linear}
+#me .hd::before{content:"";position:absolute;left:-10px;top:-33px;width:20px;height:16px;background:#fff;clip-path:polygon(50% 0,100% 100%,0 100%);filter:drop-shadow(0 0 1px #0004)}
+#me .hd::after{content:"";position:absolute;left:-6.5px;top:-29.5px;width:13px;height:10.5px;background:#2f6ff0;clip-path:polygon(50% 0,100% 100%,0 100%)}
+#me .dotme{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:#2f6ff0;border:4px solid #fff;box-shadow:0 1px 6px #0005}
 .zoombar{position:absolute;right:10px;bottom:22px;display:flex;flex-direction:column;gap:6px;z-index:5}
 .zoombar button{width:42px;height:42px;border-radius:12px;border:0;background:#fffdf8;box-shadow:0 2px 6px #0003;font-size:20px;font-weight:700}
 .zoombar button.small{font-size:12px}
@@ -123,7 +145,7 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
 <header>
   <div class="top">
     <h1>이월드 <span>길잡이</span></h1>
-    <div class="live" id="live"><i class="dot"></i><span id="liveText">운영정보 확인 중</span><button id="refresh" type="button">새로고침</button></div>
+    <div class="live" id="live"><i class="dot"></i><span id="liveText">운영정보 확인 중</span><button id="refresh" type="button">새로고침</button><button id="testBtn" type="button">테스트</button></div>
   </div>
   <form class="search" id="searchForm" autocomplete="off">
     <input id="q" type="search" placeholder="어트랙션·장소 검색" enterkeyhint="search">
@@ -144,8 +166,9 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
     </svg>
   </div>
   <div id="labels"></div>
+  <div id="favs"></div>
   <div id="markers"></div>
-  <div id="me"><div class="acc"></div><div class="cone"></div><div class="dotme"></div></div>
+  <div id="me"><div class="acc"></div><div class="glow"></div><div class="hd"></div><div class="dotme"></div></div>
   <div class="toast" id="toast"></div>
   <div class="zoombar">
     <button type="button" id="locBtn" aria-label="내 위치">내<br>위치</button>
@@ -155,6 +178,7 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
   </div>
 </div>
 
+<div id="favPicker"></div>
 <section id="panel">
   <button class="grip" id="grip" type="button" aria-label="목록 크기 바꾸기"><i></i></button>
   <div class="tabs">
@@ -553,6 +577,21 @@ function buildLabels(){
   lbLayer.innerHTML=h;
 }
 function shortName(p){ return p.name.replace(/\s*\(.*?\)\s*/g,'').replace('·아쿠아빌리지·잔디썰매','').replace('로드스테이크·엔티앤스·뉴욕핫도그','핫도그·스테이크'); }
+const favLayer=$('#favs');
+function buildFavStars(){
+  let h='';
+  for(const k in FAVS){
+    if(!k.startsWith('p:')) continue;
+    const p=BY_ID[k.slice(2)]; if(!p) continue;
+    h+=`<button type="button" class="fv" data-id="${p.id}"><b style="color:${FAVS[k]}">★</b><span>${esc(shortName(p))}</span></button>`;
+  }
+  favLayer.innerHTML=h;
+  favLayer.querySelectorAll('.fv').forEach(b=>b.addEventListener('click',e=>{
+    if(moved) return; e.stopPropagation();
+    const p=BY_ID[b.dataset.id]; chip=null; query=p.name; $('#q').value=query; drawChips();
+    shown=[p]; selId=p.id; drawMarkers(); setTab('search'); select(p.id,false,false);
+  }));
+}
 function placeOverlay(){
   const sc = S*bw/VB.w; // 화면 px per 지도 px
   for(const el of lbLayer.children){
@@ -562,7 +601,7 @@ function placeOverlay(){
       const p=BY_ID[el.dataset.id]; px=p.px; py=p.py;
       const l=+el.dataset.l;
       show = (l===1 && sc>=1.7) || (l===2 && sc>=2.6) || (l===3 && sc>=4.2);
-      if(shownIds.has(p.id)) show=false;
+      if(shownIds.has(p.id) || FAVS['p:'+p.id]) show=false;
     }
     if(!show){ el.style.display='none'; continue; }
     const [x,y]=toScreen(px,py);
@@ -579,6 +618,13 @@ function placeOverlay(){
       el.querySelector('.ea').style.transform=`rotate(${ang*180/Math.PI+90}deg)`;
     }
     el.style.left=x+'px'; el.style.top=y+'px';
+  }
+  const scr=S*bw/VB.w;
+  for(const el of favLayer.children){
+    const p=BY_ID[el.dataset.id]; const [x,y]=toScreen(p.px,p.py);
+    el.style.left=x+'px'; el.style.top=y+'px';
+    el.style.display=shownIds.has(p.id)?'none':'';
+    el.querySelector('span').style.display = scr>=1.7 ? '' : 'none';
   }
   placeMe();
 }
@@ -608,7 +654,10 @@ function drawMarkers(){
 ------------------------------------------------------------ */
 let ME=null, watchId=null, heading=null, firstFix=true;
 /* 테스트 모드: 주소 끝에 #test 를 붙이면 GPS 대신 지도를 누른 곳이 내 위치가 됨 */
-const TEST=/test/i.test(location.hash||'')||/[?&]test/i.test(location.search||'');
+let TEST=/test/i.test(location.hash||'')||/[?&]test/i.test(location.search||'');
+/* 걷기 테스트: 주소 끝에 #walk 를 붙이면 지금 서 있는 곳을 이월드 정문으로 옮겨서, 실제로 걸으면 지도 위 점도 같은 거리·방향으로 움직임 */
+let WALK=/walk/i.test(location.hash||'')||/[?&]walk/i.test(location.search||'');
+let walkOff=null;
 function setFakeMe(px,py){
   const [lat,lng]=px2ll(px,py); ME={lat,lng,acc:8,px,py}; placeOverlay(); updateDistances();
   if(chip && tab==='search'){ shown=chipPlaces(chip).slice(0,60); drawMarkers(); render(); }
@@ -619,20 +668,27 @@ function placeMe(){
   meEl.style.display='block'; meEl.style.left=x+'px'; meEl.style.top=y+'px';
   const r=Math.max(12, ME.acc/GEO.s*(S*bw/VB.w));
   const acc=meEl.querySelector('.acc'); acc.style.width=acc.style.height=(2*r)+'px';
-  const cone=meEl.querySelector('.cone');
-  if(heading!=null){ cone.style.display='block'; cone.style.transform=`rotate(${heading}deg)`; } else cone.style.display='none';
+  const hd=meEl.querySelector('.hd');
+  if(heading!=null){ hd.style.display='block'; hd.style.transform=`rotate(${shownHeading(heading)}deg)`; } else hd.style.display='none';
 }
-/* 나침반: 아이폰은 화면을 한 번 만져야 허락 창을 띄울 수 있음 */
+/* 화살표가 359°→0°로 넘어갈 때 한 바퀴 돌지 않도록 */
+let _hdShown=null;
+function shownHeading(h){
+  if(_hdShown==null){ _hdShown=h; return h; }
+  let d=((h-_hdShown)%360+540)%360-180; _hdShown+=d; return _hdShown;
+}
+/* 나침반: 아이폰은 화면을 터치했을 때만 허락 창을 띄울 수 있음 */
 let compassAsked=false;
 function askCompass(){
-  if(compassAsked) return; compassAsked=true;
+  if(compassAsked) return;
   try{
     if(typeof DeviceOrientationEvent!=='undefined' && typeof DeviceOrientationEvent.requestPermission==='function'){
-      DeviceOrientationEvent.requestPermission().then(r=>{ if(r==='granted') listenCompass(); }).catch(()=>{});
-    } else listenCompass();
+      DeviceOrientationEvent.requestPermission().then(r=>{ if(r==='granted'){ compassAsked=true; listenCompass(); } }).catch(()=>{});
+    } else { compassAsked=true; listenCompass(); }
   }catch(e){}
 }
-document.addEventListener('pointerup',askCompass,{once:true,capture:true});
+['click','touchend'].forEach(ev=>document.addEventListener(ev,askCompass,{capture:true}));
+// 안드로이드 등 허락이 필요 없는 기기는 바로 시작
 /* 내 위치 버튼: 내 위치로 다시 이동 */
 function goMe(){
   askCompass();
@@ -642,30 +698,30 @@ function goMe(){
     else { const d=distM(ME.lat,ME.lng,...px2ll(420,450)); toast(`위치는 잘 잡혔어요. 지금은 이월드 밖이에요 (이월드까지 약 ${fmtDist(d)})`,4500); }
     return;
   }
-  if(watchId==null && !TEST) startGPS(true);
+  if(watchId==null) startGPS(true);
   toast('위치를 찾는 중이에요…');
 }
 /* 페이지를 열면 자동으로 내 위치 표시 시작 */
 function startGPS(fromButton){
-  if(TEST){
-    $('#locBtn').classList.add('on');
-    if(!ME) setFakeMe(168,195);
-    if(fromButton) toast('테스트 모드: 지도를 한 번 누르면 그 자리로 내 위치가 옮겨져요',3500);
-    return;
-  }
+  if(TEST && !ME) setFakeMe(168,195);
   if(!('geolocation' in navigator)){ if(fromButton) toast('이 기기에서는 위치 기능을 쓸 수 없어요.'); return; }
   if(watchId!=null) return;
   let gpsErrShown=false;
   $('#locBtn').classList.add('on');
   watchId=navigator.geolocation.watchPosition(pos=>{
+    if(TEST) return; // 지도 누르기 테스트 중에는 실제 GPS 무시
     const {latitude:lat,longitude:lng,accuracy:acc}=pos.coords;
-    const [px,py]=ll2px(lat,lng);
-    ME={lat,lng,acc:acc||20,px,py};
+    let [px,py]=ll2px(lat,lng), mlat=lat, mlng=lng;
+    if(WALK){
+      if(!walkOff){ walkOff=[168-px,195-py]; toast('걷기 테스트: 지금 서 있는 곳을 이월드 정문으로 놓았어요. 걸으면 파란 점이 같이 움직여요',5000); }
+      px+=walkOff[0]; py+=walkOff[1]; [mlat,mlng]=px2ll(px,py);
+    }
+    ME={lat:mlat,lng:mlng,acc:acc||20,px,py};
     if(pos.coords.heading!=null && !isNaN(pos.coords.heading) && pos.coords.speed>0.7 && compassSrc!=='device') heading=pos.coords.heading;
     const inside = px>60 && px<800 && py>50 && py<880;
     if(firstFix){
       firstFix=false;
-      if(inside) focusPx(px,py,Math.max(S,3));
+      if(inside) focusPx(px,py,Math.max(S,WALK?5:3));
       else { const d=distM(ME.lat,ME.lng,...px2ll(420,450)); toast(`위치는 잘 잡혔어요. 지금은 이월드 밖이에요 (이월드까지 약 ${fmtDist(d)})`,4500); }
     }
     placeOverlay(); updateDistances();
@@ -755,8 +811,8 @@ async function loadLive(force){
   catch(e){ try{ data=await jsonp(url); }catch(e2){ data={ok:false,error:e2.message}; } }
   liveLoading=false;
   if(data && data.ok){
-    LIVE=data; liveErr=null; matchApi();
-    setLive('ok',`운영정보 ${(data.fetchedAt||'').slice(11,16)} 기준`);
+    LIVE=data; liveErr=null; matchApi(); migrateFavs(); buildFavStars();
+    setLive('ok',`${(data.fetchedAt||'').slice(11,16)} 기준`);
   } else { liveErr=(data&&data.error)||'알 수 없는 오류'; setLive('err','운영정보 불러오기 실패'); }
   drawMarkers(); render();
 }
@@ -870,7 +926,37 @@ let tab='search';
 function loadLS(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:v; }catch(e){ return d; } }
 function saveLS(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 let sf=loadLS('ew_sf','all'); if(!['all','fav','off'].includes(sf)) sf='all';
-let FAVS; try{ FAVS=new Set(JSON.parse(loadLS('ew_favs','[]'))); }catch(e){ FAVS=new Set(); }
+/* 즐겨찾기: { 'p:장소id' 또는 'a:홈페이지이름' : 별 색 } */
+const FAV_COLORS=[['#f2a900','노랑'],['#e53935','빨강'],['#ec407a','분홍'],['#8e24aa','보라'],['#1e88e5','파랑'],['#00897b','청록'],['#43a047','초록'],['#3e2723','검정']];
+let FAVS={};
+try{ FAVS=JSON.parse(loadLS('ew_favs2','{}'))||{}; }catch(e){ FAVS={}; }
+try{ const old=JSON.parse(loadLS('ew_favs','[]')); if(Array.isArray(old)) old.forEach(n=>{ if(!FAVS['a:'+n]) FAVS['a:'+n]=FAV_COLORS[0][0]; }); saveLS('ew_favs','[]'); }catch(e){}
+function saveFavs(){ saveLS('ew_favs2',JSON.stringify(FAVS)); }
+/* 본지도·주주팜 상세지도에 겹쳐 있는 항목은 하나로 */
+const CANON={A18:'Z2',A19:'Z1',A22:'Z3',A25:'Z9',A26:'ZB',A24:'ZS2',ZF2:'A13'};
+const canon=id=>CANON[id]||id;
+function favKeyApi(a){ const pid=PLACE_OF[a.id]; return pid ? 'p:'+canon(pid) : 'a:'+a.name; }
+function favColor(key){ return FAVS[key]||null; }
+function migrateFavs(){ // 예전에 홈페이지 이름으로 저장한 즐겨찾기를 장소로 옮기기
+  if(!LIVE) return; let ch=false;
+  LIVE.items.forEach(a=>{ const pid=PLACE_OF[a.id]; const k='a:'+a.name; if(pid && FAVS[k]){ FAVS['p:'+canon(pid)]=FAVS['p:'+canon(pid)]||FAVS[k]; delete FAVS[k]; ch=true; } });
+  if(ch) saveFavs();
+}
+/* 별 색 고르기 창 */
+function openFavPicker(key,name){
+  const cur=FAVS[key];
+  const box=$('#favPicker');
+  box.innerHTML=`<div class="fpbox"><div class="fpt">${cur?'즐겨찾기 별 색 바꾸기':'즐겨찾기에 추가'}</div><div class="fpn">${esc(name)}</div>
+    <div class="fps">${FAV_COLORS.map(([c,n])=>`<button type="button" class="sw${cur===c?' on':''}" data-c="${c}" style="color:${c}" aria-label="${n}">★<small>${n}</small></button>`).join('')}</div>
+    <div class="fpb">${cur?'<button type="button" class="fpdel">즐겨찾기 해제</button>':''}<button type="button" class="fpx">닫기</button></div></div>`;
+  box.style.display='flex';
+  const close=()=>{ box.style.display='none'; };
+  box.onclick=e=>{ if(e.target===box) close(); };
+  box.querySelectorAll('.sw').forEach(b=>b.onclick=()=>{ FAVS[key]=b.dataset.c; saveFavs(); close(); afterFavChange(); });
+  const d=box.querySelector('.fpdel'); if(d) d.onclick=()=>{ delete FAVS[key]; saveFavs(); close(); afterFavChange(); };
+  box.querySelector('.fpx').onclick=close;
+}
+function afterFavChange(){ buildFavStars(); placeOverlay(); render(); }
 function setTab(t){ tab=t; document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===t)); render(); }
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
 /* 아래 창: 위로 끌어올리면 커지고, 내리면 작아짐 */
@@ -916,7 +1002,8 @@ function locText(p){
   return parts.filter(Boolean).join(' · ');
 }
 function cardHTML(p){
-  return `<button type="button" class="card${p.id===selId?' sel':''}" data-id="${p.id}">
+  const fk='p:'+canon(p.id), fc=FAVS[fk];
+  return `<div role="button" tabindex="0" class="card${p.id===selId?' sel':''}" data-id="${p.id}">
     <span class="badge" style="background:${ZONES[p.zone].color}">${esc(p.num||pinIcon(p.cat))}</span>
     <span class="cbody">
       <div class="cname">${esc(p.name)}</div>
@@ -924,7 +1011,8 @@ function cardHTML(p){
       <div class="cloc">${locText(p)}</div>
       <div class="dwrap">${distHTML(p)}</div>
       ${pillHTML(statusOfPlace(p))}
-    </span></button>`;
+    </span>
+    <button type="button" class="cstar" data-k="${fk}" data-n="${esc(p.name)}" aria-label="즐겨찾기" style="${fc?`color:${fc}`:''}">${fc?'★':'☆'}</button></div>`;
 }
 function bannerHTML(){
   if(!GAS_URL) return `<div class="banner">운영정보가 아직 연결되지 않았어요.</div>`;
@@ -944,42 +1032,52 @@ function render(){
       h+=shown.map(cardHTML).join('');
     }
     L.innerHTML=h;
-    L.querySelectorAll('.card').forEach(c=>c.onclick=()=>select(c.dataset.id,false,false));
+    L.querySelectorAll('.card').forEach(c=>c.onclick=e=>{ if(e.target.closest('.cstar')) return; select(c.dataset.id,false,false); });
+    L.querySelectorAll('.cstar').forEach(b=>b.onclick=e=>{ e.stopPropagation(); openFavPicker(b.dataset.k,b.dataset.n); });
     updateArrows();
   } else {
     let h=bannerHTML();
     if(!LIVE){ L.innerHTML=h+(GAS_URL&&!liveErr?'<div class="hint">불러오는 중…</div>':''); return; }
     const items=LIVE.items.map(a=>({a,st:statusOf(a),pid:PLACE_OF[a.id]}));
     const offs=items.filter(x=>x.st.k==='off').length;
-    const favCnt=items.filter(x=>FAVS.has(x.a.name)).length;
+    const isFav=x=>!!FAVS[favKeyApi(x.a)];
+    const apiFavKeys=new Set(items.filter(isFav).map(x=>favKeyApi(x.a)));
+    const otherFavs=Object.keys(FAVS).filter(k=>k.startsWith('p:') && !apiFavKeys.has(k) && BY_ID[k.slice(2)]).map(k=>BY_ID[k.slice(2)]);
+    const favCnt=apiFavKeys.size+otherFavs.length;
     h+=`<div class="filters">
       <button type="button" class="chip ${sf==='all'?'on':''}" data-f="all">전체 ${items.length}</button>
       <button type="button" class="chip ${sf==='fav'?'on':''}" data-f="fav">★ 즐겨찾기 ${favCnt}</button>
       <button type="button" class="chip ${sf==='off'?'on':''}" data-f="off">운휴·종료만 ${offs}</button></div>
       <div class="hint" style="padding:2px 4px 0;font-size:12.5px">이월드 홈페이지 어트랙션 목록 · ${esc((LIVE.fetchedAt||'').slice(5,16).replace('T',' '))} 기준</div>`;
     const groups={};
-    items.filter(x=> sf==='all' || (sf==='off'&&x.st.k==='off') || (sf==='fav'&&FAVS.has(x.a.name)))
+    items.filter(x=> sf==='all' || (sf==='off'&&x.st.k==='off') || (sf==='fav'&&isFav(x)))
       .forEach(x=>{(groups[x.a.zone||'기타']=groups[x.a.zone||'기타']||[]).push(x)});
     const order=['판타지월드','다이나믹월드','어드벤처월드','매직월드'];
     Object.keys(groups).sort((a,b)=>(order.indexOf(a)+99)%99-(order.indexOf(b)+99)%99).forEach(z=>{
       h+=`<div class="sec">${esc(z)} <span class="cnt">${groups[z].length}</span></div>`;
       groups[z].forEach(({a,st,pid})=>{
-        const fav=FAVS.has(a.name);
-        h+=`<div class="row"><button type="button" class="star${fav?' on':''}" data-name="${esc(a.name)}" aria-label="즐겨찾기">${fav?'★':'☆'}</button>
+        const fk=favKeyApi(a), fc=FAVS[fk];
+        h+=`<div class="row"><button type="button" class="star${fc?' on':''}" data-k="${fk}" data-n="${esc(a.name)}" aria-label="즐겨찾기" style="${fc?`color:${fc}`:''}">${fc?'★':'☆'}</button>
           <div class="nm">${esc(a.name)}<small>${esc(a.detail||'')}${st.sub?(a.detail?' · ':'')+esc(st.sub):''}</small></div>
           <span class="pill ${st.k}">${esc(st.label)}</span>
-          <button type="button" class="go" data-pid="${pid||''}" ${pid?'':'disabled'}>${pid?'지도':'위치 미등록'}</button></div>`;
+          <button type="button" class="go" data-pid="${pid?canon(pid):''}" ${pid?'':'disabled'}>${pid?'지도':'위치 미등록'}</button></div>`;
       });
     });
-    if(!Object.keys(groups).length) h+= sf==='fav'
-      ? '<div class="hint">어트랙션 이름 앞의 ☆를 누르면 즐겨찾기에 추가돼요.</div>'
+    if(sf==='fav' && otherFavs.length){
+      h+=`<div class="sec">그 밖의 즐겨찾기 <span class="cnt">${otherFavs.length}</span></div>`;
+      otherFavs.forEach(p=>{
+        const fk='p:'+p.id, fc=FAVS[fk];
+        h+=`<div class="row"><button type="button" class="star on" data-k="${fk}" data-n="${esc(p.name)}" style="color:${fc}">★</button>
+          <div class="nm">${esc(p.name)}<small>${esc(ZONES[p.zone].name)}${p.num&&p.zone!=='T'?' '+esc(p.num)+'번':''}${p.note?' · '+esc(p.note):''}</small></div>
+          <button type="button" class="go" data-pid="${p.id}">지도</button></div>`;
+      });
+    }
+    if(!Object.keys(groups).length && !(sf==='fav'&&otherFavs.length)) h+= sf==='fav'
+      ? '<div class="hint">☆를 누르면 즐겨찾기에 추가돼요. 검색 결과에서도 추가할 수 있어요.</div>'
       : '<div class="hint">해당하는 어트랙션이 없어요.</div>';
     L.innerHTML=h;
     L.querySelectorAll('.filters .chip').forEach(b=>b.onclick=()=>{sf=b.dataset.f; saveLS('ew_sf',sf); render();});
-    L.querySelectorAll('.star').forEach(b=>b.onclick=()=>{
-      const n=b.dataset.name; if(FAVS.has(n)) FAVS.delete(n); else FAVS.add(n);
-      saveLS('ew_favs',JSON.stringify([...FAVS])); render();
-    });
+    L.querySelectorAll('.star').forEach(b=>b.onclick=()=>openFavPicker(b.dataset.k,b.dataset.n));
     L.querySelectorAll('.go[data-pid]').forEach(b=>b.onclick=()=>{
       const id=b.dataset.pid; if(!id) return;
       chip=null; query=BY_ID[id].name; $('#q').value=query; drawChips();
@@ -1004,9 +1102,39 @@ $('#clear').onclick=()=>{ query=''; chip=null; $('#q').value=''; drawChips(); sh
 
 /* 시작 */
 buildLabels();
+buildFavStars();
 drawChips();
 layout(false);
 render();
+/* 테스트 메뉴 */
+function testState(){ return TEST?'tap':(WALK?'walk':'off'); }
+function setTestMode(m){
+  TEST = m==='tap'; WALK = m==='walk'; walkOff=null;
+  $('#testBtn').classList.toggle('on',m!=='off');
+  $('#testBtn').textContent = m==='off' ? '테스트' : '테스트 중';
+  if(m==='tap'){ setFakeMe(168,195); focusPx(168,195,Math.max(S,4)); toast('지도를 한 번 누르면 그 자리로 내 위치가 옮겨져요. 몸을 돌리면 화살표가 따라 돌아요',4500); }
+  else { ME=null; firstFix=true; placeOverlay(); updateDistances();
+    if(watchId!=null){ navigator.geolocation.clearWatch(watchId); watchId=null; } startGPS(true); // 다시 시작해서 바로 현재 위치 받기
+    if(m==='walk') toast('위치를 잡는 중이에요… 잡히면 지금 서 있는 곳이 이월드 정문이 돼요',4000);
+    else toast('테스트를 끝냈어요. 실제 위치로 돌아왔어요',2500); }
+  if(chip && tab==='search'){ shown=chipPlaces(chip).slice(0,60); drawMarkers(); render(); }
+}
+$('#testBtn').onclick=()=>{
+  askCompass();
+  const cur=testState(), box=$('#favPicker');
+  box.innerHTML=`<div class="fpbox"><div class="fpn">테스트</div><div class="tmi">
+    <button type="button" data-m="tap" class="${cur==='tap'?'on':''}">지도 누르기 테스트<small>정문에 가상의 내 위치가 생겨요. 지도를 누르면 그 자리로 옮겨지고, 몸을 돌리면 방향 화살표를 확인할 수 있어요.</small></button>
+    <button type="button" data-m="walk" class="${cur==='walk'?'on':''}">걷기 테스트<small>지금 서 있는 곳을 이월드 정문으로 놓아요. 실제로 걸으면 파란 점도 같은 거리·방향으로 움직여요.</small></button>
+    <button type="button" data-m="off" class="${cur==='off'?'on':''}">테스트 끝내기<small>실제 내 위치로 돌아가요.</small></button>
+  </div><div class="fpb"><button type="button" class="fpx">닫기</button></div></div>`;
+  box.style.display='flex';
+  const close=()=>{ box.style.display='none'; };
+  box.onclick=e=>{ if(e.target===box) close(); };
+  box.querySelector('.fpx').onclick=close;
+  box.querySelectorAll('.tmi button').forEach(b=>b.onclick=()=>{ close(); setTestMode(b.dataset.m); });
+};
+if(TEST||WALK){ $('#testBtn').classList.add('on'); $('#testBtn').textContent='테스트 중'; }
+listenCompass(); // 허락이 필요 없는 기기(안드로이드 등)는 바로 방향 받기 시작
 startGPS(false);
 loadLive(false);
 setInterval(()=>{ if(!document.hidden) loadLive(false); }, AUTO_REFRESH_MIN*60*1000);
