@@ -72,6 +72,7 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
   color:#fff;padding:3px 9px;border-radius:999px;box-shadow:0 1px 4px #0004;opacity:.95}
 .pl{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:3px;white-space:nowrap;font-size:11.5px;font-weight:700;
   color:var(--ink);text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 2px #fff}
+.pl{pointer-events:auto;cursor:pointer}
 .pl i{display:block;width:9px;height:9px;border-radius:50%;border:1.5px solid #fff;flex:none;box-shadow:0 0 0 .5px #0003}
 .pl.ride{font-size:12.5px}
 .mk{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;border:0;padding:0;background:none;cursor:pointer}
@@ -137,6 +138,9 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
 .sec .cnt{font-weight:600}
 .row{display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid var(--line);font-size:14.5px}
 .row .nm{flex:1;min-width:0}
+.hgt{display:block;font-size:12.5px;font-weight:700;color:#7a4b00;margin-top:3px}
+.row .nm{cursor:pointer}
+.row.selrow{background:#fff3e0}
 .row .nm small{display:block;color:var(--sub);font-size:12px;margin-top:1px}
 .row .go{flex:none;border:1px solid var(--line);background:#fff;border-radius:9px;padding:5px 8px;font-size:12.5px}
 .row .go[disabled]{opacity:.45}
@@ -209,7 +213,7 @@ const AUTO_REFRESH_MIN = 5;
    GPS 기준: 구글 지도 좌표 8곳(정문·83타워·탑스핀·카멜백·회전목마·범퍼카·허리케인·대공연장)을
    네이버 지도 모양 위치에 맞춤. 평균 오차 약 7m, 지도 1칸 = 약 0.93m, 정북 방향이 위쪽
 ------------------------------------------------------------ */
-const GEO = { lat0:35.853237, lng0:128.566578, cr:0.9310887326916282, ci:-0.006354738901996944, tr:-563.0042761308528, ti:256.17256902749955 };
+const GEO = { lat0:35.853237, lng0:128.566578, cr:0.934815134271577, ci:-0.005955537367677652, tr:-565.0150363196348, ti:254.1540703673576 };
 GEO.s = Math.hypot(GEO.cr,GEO.ci); // 지도 1칸 = 약 0.93m
 const KX = 111320*Math.cos(GEO.lat0*Math.PI/180), KY = 110950;
 function px2ll(x,y){ const zr=x, zi=-y; const E=GEO.cr*zr-GEO.ci*zi+GEO.tr, N=GEO.cr*zi+GEO.ci*zr+GEO.ti; return [GEO.lat0+N/KY, GEO.lng0+E/KX]; }
@@ -420,7 +424,7 @@ const RAW = [
 ];
 
 /* 실제 지도 위치 (네이버 지도 기준 좌표) */
-const REAL = {"D2": [505.6, 332.9], "D3": [523.6, 358.7], "D6": [485.7, 371.0], "D10": [563.6, 506.8], "D11": [602.9, 544.6], "D12": [601.4, 607.3], "D14": [690.0, 654.6], "D15": [641.1, 292.4], "D4": [587.8, 347.3], "D5": [528.0, 372.9], "D7": [498.4, 382.2], "D8": [510.2, 392.6], "D9": [551.5, 414.0], "D13": [670.9, 687.1], "D1": [511.9, 353.6], "F9": [315.0, 128.0], "F15": [469.0, 233.3], "F21": [439.1, 354.9], "F22": [376.9, 341.9], "F25": [450.0, 246.5], "F13": [458.6, 150.1], "F23": [386.7, 256.2], "F24": [422.1, 260.1], "F4": [94.5, 168.0], "F2": [103.1, 137.2], "F10": [433.8, 178.2], "F11": [421.7, 178.6], "F12": [459.2, 185.8], "F17": [473.0, 275.4], "F18": [473.8, 284.9], "F19": [496.1, 286.5], "F20": [474.5, 337.6], "F1": [101.1, 103.2], "F5": [188.9, 125.2], "F7": [189.6, 156.9], "F8": [229.2, 155.1], "F16": [463.2, 256.2], "F3": [90.9, 139.6], "F6": [185.0, 134.9], "F14": [479.5, 206.7], "A2": [436.4, 386.5], "A4": [438.3, 429.6], "A9": [478.5, 466.5], "A14": [504.8, 523.2], "A17": [552.2, 665.7], "A21": [643.3, 738.1], "A1": [480.2, 404.8], "A7": [534.3, 503.8], "A8": [544.6, 529.3], "A10": [546.0, 564.8], "A12": [609.9, 634.8], "A18": [614.0, 735.1], "A19": [624.0, 722.5], "A22": [650.1, 760.8], "A23": [614.7, 766.4], "A25": [619.9, 828.7], "A26": [649.9, 845.3], "A3": [458.9, 405.4], "A5": [507.9, 478.4], "A51": [502.8, 471.8], "A6": [502.7, 467.5], "A11": [614.5, 639.6], "A13": [623.1, 666.3], "A15": [615.4, 653.4], "A16": [639.0, 677.9], "A20": [605.0, 792.4], "A24": [620.5, 789.7], "M3": [348.1, 330.2], "M5": [353.4, 343.9], "M6": [335.6, 345.1], "M8": [325.8, 356.3], "M9": [323.5, 367.8], "M10": [322.2, 383.8], "M11": [346.4, 386.9], "M12": [330.3, 404.4], "M13": [336.9, 411.0], "M14": [349.5, 423.8], "M21": [385.6, 381.8], "M2": [361.8, 333.3], "M15": [360.2, 395.6], "M20": [394.0, 403.8], "M22": [395.3, 354.5], "M24": [389.2, 338.1], "M7": [341.6, 368.7], "M17": [373.3, 407.2], "M18": [376.9, 425.4], "M19": [389.8, 431.8], "M201": [397.0, 382.2], "M202": [400.5, 391.1], "M23": [379.6, 353.2], "M1": [369.4, 330.2], "M4": [348.9, 333.4], "M16": [364.9, 411.0], "T7": [610.3, 268.8], "T6": [610.3, 268.8], "T5": [610.3, 268.8], "T4": [598.1, 267.3], "T9": [622.5, 276.8], "T10": [657.2, 355.0], "T3": [640.0, 335.7], "T2": [640.0, 338.8], "T8": [634.1, 291.5], "T1": [645.0, 356.5], "Z1": [624.0, 722.5], "Z2": [614.0, 735.1], "Z3": [650.1, 760.8], "Z4": [653.7, 781.1], "Z5": [653.1, 797.2], "Z6": [653.3, 810.8], "Z7": [636.2, 799.0], "Z8": [626.9, 806.0], "Z9": [619.9, 828.7], "Z10": [629.2, 650.9], "ZC": [643.3, 738.1], "ZT": [635.7, 823.0], "ZB": [649.2, 845.3], "ZF1": [614.5, 639.6], "ZF2": [623.1, 666.3], "ZF3": [621.0, 685.4], "ZF4": [618.8, 696.4], "ZF5": [615.8, 702.7], "ZF6": [632.7, 737.6], "ZCY": [606.0, 674.5], "ZBG": [608.8, 695.6], "ZS1": [637.7, 745.5], "ZS2": [620.5, 789.7], "W1": [119.2, 114.2], "W2": [124.0, 142.4], "W3": [114.4, 211.9], "W4": [472.6, 183.0], "W5": [491.6, 296.7], "W6": [552.8, 429.3], "W7": [683.3, 689.1], "W8": [590.4, 621.7], "W9": [431.4, 449.3], "L1": [108.6, 115.5], "L2": [462.8, 198.0], "L3": [392.5, 423.5], "L4": [483.7, 362.5], "L5": [607.0, 640.1], "L6": [610.7, 260.9], "L7": [644.9, 215.0], "G1": [98.1, 114.0], "G2": [171.5, 139.6], "G3": [528.7, 195.2], "G4": [575.3, 820.9], "G5": [112.5, 175.9], "G6": [432.6, 218.3], "G7": [520.7, 379.9], "G8": [650.3, 632.6], "G9": [650.8, 647.5], "G10": [217.2, 177.2], "G11": [95.1, 201.2], "P1": [158.0, 60.5], "P2": [552.7, 148.9], "P3": [550.6, 131.0], "NEW_andersen": [385.2, 326.8], "NEW_crepe": [399.5, 351.8], "NEW_aquabomb": [536.5, 387.5], "NEW_neulbit": [462.4, 411.4], "NEW_towergate": [611.8, 332.5], "NEW_skyway": [664.6, 413.5], "NEW_skywagon": [586.5, 503.2], "NEW_topspin": [632.5, 727.8], "NEW_youngtown": [621.6, 652.5]};
+const REAL = {"D2": [505.6, 328.4], "D3": [523.6, 354.2], "D6": [485.7, 366.5], "D10": [563.4, 501.2], "D11": [602.7, 539.0], "D12": [601.3, 601.8], "D14": [690.9, 649.6], "D15": [642.6, 291.8], "D4": [587.9, 347.4], "D5": [528.0, 368.5], "D7": [498.4, 377.7], "D8": [510.2, 388.1], "D9": [551.5, 409.6], "D13": [671.5, 682.5], "D1": [511.9, 349.1], "F9": [315.0, 128.0], "F15": [468.5, 230.5], "F21": [439.1, 350.4], "F22": [377.7, 337.8], "F25": [449.7, 243.6], "F13": [458.3, 148.1], "F23": [387.1, 253.2], "F24": [422.1, 257.0], "F4": [95.7, 164.9], "F2": [104.1, 134.2], "F10": [433.7, 175.9], "F11": [421.7, 176.3], "F12": [458.8, 183.5], "F17": [472.5, 272.1], "F18": [473.2, 281.6], "F19": [495.4, 283.1], "F20": [474.3, 333.4], "F1": [102.1, 101.1], "F5": [189.5, 122.8], "F7": [190.1, 153.9], "F8": [229.4, 152.0], "F16": [462.8, 253.2], "F3": [92.2, 136.4], "F6": [185.6, 132.4], "F14": [478.9, 204.2], "A2": [436.4, 382.1], "A4": [438.3, 425.1], "A9": [478.3, 460.8], "A14": [504.5, 517.6], "A17": [551.6, 660.8], "A21": [644.4, 732.4], "A1": [480.2, 400.1], "A7": [534.1, 498.2], "A8": [544.4, 523.7], "A10": [545.7, 559.2], "A12": [610.0, 629.7], "A18": [614.9, 729.4], "A19": [624.8, 717.0], "A22": [651.5, 754.9], "A23": [615.4, 761.0], "A25": [621.3, 822.8], "A26": [651.4, 839.4], "A3": [458.8, 400.8], "A5": [507.7, 472.8], "A51": [502.6, 466.3], "A6": [502.4, 461.9], "A11": [614.6, 634.5], "A13": [623.2, 661.4], "A15": [615.7, 648.3], "A16": [639.5, 672.9], "A20": [606.4, 786.5], "A24": [621.8, 783.8], "M3": [348.1, 325.8], "M5": [353.4, 339.4], "M6": [335.5, 340.7], "M8": [325.7, 351.9], "M9": [323.5, 363.4], "M10": [322.2, 379.4], "M11": [346.4, 382.5], "M12": [330.4, 400.0], "M13": [336.9, 406.6], "M14": [349.5, 419.3], "M21": [385.6, 377.3], "M2": [361.8, 328.8], "M15": [360.2, 391.2], "M20": [394.0, 399.4], "M22": [395.2, 350.0], "M24": [389.2, 333.6], "M7": [341.6, 364.3], "M17": [373.3, 402.7], "M18": [376.9, 420.9], "M19": [389.8, 427.4], "M201": [397.0, 377.7], "M202": [400.5, 386.6], "M23": [379.6, 348.7], "M1": [369.4, 325.8], "M4": [348.8, 329.0], "M16": [364.9, 406.5], "T7": [610.4, 268.9], "T6": [610.4, 268.9], "T5": [610.4, 268.9], "T4": [598.2, 267.5], "T9": [622.6, 276.9], "T10": [657.3, 355.1], "T3": [640.0, 335.8], "T2": [640.0, 339.0], "T8": [634.1, 291.6], "T1": [645.1, 356.6], "Z1": [624.8, 717.0], "Z2": [614.9, 729.4], "Z3": [651.5, 754.9], "Z4": [655.2, 775.1], "Z5": [654.6, 791.2], "Z6": [654.8, 804.8], "Z7": [637.7, 793.0], "Z8": [628.3, 800.1], "Z9": [621.3, 822.8], "Z10": [629.3, 645.9], "ZC": [644.4, 732.4], "ZT": [637.1, 817.1], "ZB": [650.7, 839.4], "ZF1": [614.6, 634.5], "ZF2": [623.2, 661.4], "ZF3": [621.2, 680.3], "ZF4": [619.2, 691.2], "ZF5": [616.3, 697.4], "ZF6": [633.7, 732.0], "ZCY": [606.2, 669.5], "ZBG": [609.2, 690.4], "ZS1": [638.9, 739.7], "ZS2": [621.8, 783.8], "W1": [120.0, 111.8], "W2": [124.8, 139.5], "W3": [115.5, 208.5], "W4": [472.1, 180.8], "W5": [491.1, 293.1], "W6": [552.6, 424.7], "W7": [683.9, 684.2], "W8": [590.4, 616.5], "W9": [431.4, 444.4], "L1": [109.5, 113.1], "L2": [462.4, 195.5], "L3": [392.5, 419.0], "L4": [483.7, 358.0], "L5": [607.1, 635.1], "L6": [612.2, 257.7], "L7": [646.5, 211.3], "G1": [99.2, 111.6], "G2": [170.3, 136.4], "G3": [527.7, 192.8], "G4": [576.5, 815.6], "G5": [113.6, 172.6], "G6": [432.5, 215.7], "G7": [520.7, 375.5], "G8": [650.7, 627.3], "G9": [651.3, 642.5], "G10": [217.6, 174.6], "G11": [96.2, 197.9], "P1": [158.0, 60.5], "P2": [551.4, 146.9], "P3": [549.4, 129.2], "NEW_andersen": [385.2, 322.4], "NEW_crepe": [399.4, 347.4], "NEW_aquabomb": [536.5, 383.0], "NEW_neulbit": [462.4, 406.9], "NEW_towergate": [611.8, 332.6], "NEW_skyway": [664.6, 413.6], "NEW_skywagon": [586.3, 497.6], "NEW_topspin": [632.7, 723.6], "NEW_youngtown": [621.8, 647.5]};
 
 const VB = {x:0, y:50, w:900, h:843};
 const GATE_PX = (REAL.G1||[98,114]); // 정문 매표소
@@ -504,7 +508,7 @@ function homeView(animate){
   if(animate) animateTo(s,tx,ty); else { S=s;TX=tx;TY=ty;clamp();apply(); }
 }
 function clamp(){
-  const vw=vp.clientWidth, vh=vp.clientHeight, w=bw*S, h=bh*S, m=0;
+  const vw=vp.clientWidth, vh=vp.clientHeight, w=bw*S, h=bh*S, m=Math.min(vw,vh)*0.45;
   if(w<=vw) TX=(vw-w)/2; else TX=Math.min(m,Math.max(vw-w-m,TX));
   if(h<=vh) TY=(vh-h)/2; else TY=Math.min(m,Math.max(vh-h-m,TY));
 }
@@ -600,6 +604,7 @@ function buildLabels(){
     h+=`<div class="pl ${p.cat==='ride'?'ride':''}" data-id="${p.id}" data-l="${lvl}"><i style="background:${p.cat==='wc'?'#555':ZONES[p.zone].hex}"></i>${icon}${esc(shortName(p))}</div>`;
   });
   lbLayer.innerHTML=h;
+  lbLayer.querySelectorAll('.pl').forEach(el=>el.addEventListener('click',e=>{ if(moved) return; e.stopPropagation(); showInfo(el.dataset.id); }));
 }
 function shortName(p){ return p.name.replace(/\s*\(.*?\)\s*/g,'').replace('·아쿠아빌리지·잔디썰매','').replace('로드스테이크·엔티앤스·뉴욕핫도그','핫도그·스테이크'); }
 const favLayer=$('#favs');
@@ -1053,11 +1058,17 @@ function routeOnMove(force){
   if(force || (moved>5 && performance.now()-routeLastAt>1500)) computeRoute(false);
 }
 
+/* 지도에서 이름을 누르면 아래 검색 결과에 그 장소 정보 표시 */
+function showInfo(id){
+  const p=BY_ID[id]; chip=null; query=p.name; $('#q').value=p.name; drawChips();
+  shown=[p]; selId=id; drawMarkers(); setTab('search');
+}
+function centerOn(id){ const p=BY_ID[id]; focusPx(p.px,p.py,Math.max(S,3.5)); }
 function select(id,scrollList,zoom=false){
   selId=id; const p=BY_ID[id];
   for(const el of mkLayer.children) el.classList.toggle('sel',el.dataset.id===id);
   const el=[...mkLayer.children].find(e=>e.dataset.id===id); if(el) mkLayer.appendChild(el);
-  if(zoom) focusPx(p.px,p.py,Math.max(S,3)); // 누른 장소가 지도에 보이도록 이동
+  if(zoom) centerOn(id);
   document.querySelectorAll('.card').forEach(c=>c.classList.toggle('sel',c.dataset.id===id));
   if(scrollList){ const c=document.querySelector(`.card[data-id="${id}"]`); if(c) c.scrollIntoView({block:'nearest',behavior:'smooth'}); }
 }
@@ -1084,7 +1095,7 @@ async function gasCall(params){
   try{ const r=await fetch(url,{redirect:'follow'}); txt=await r.text(); d=JSON.parse(txt); }
   catch(e){
     if(txt && /<html|<!DOCTYPE/i.test(txt)){
-      const err=new Error('Apps Script가 권한 허용을 기다리고 있어요. 편집기에서 setupFavs를 실행해 권한을 허용한 뒤, "새 버전"으로 다시 배포해 주세요');
+      const err=new Error('Apps Script 권한이 필요해요. 편집기에서 testFavs를 실행해 권한을 허용한 뒤, "새 버전"으로 다시 배포해 주세요');
       err.kind='auth'; throw err;
     }
     try{ d=await jsonp(url); }catch(e2){ const err=new Error('인터넷 연결이 불안정해요'); err.kind='net'; throw err; }
@@ -1208,6 +1219,16 @@ function locText(p){
   if(a && a.detail) parts.push('📍 '+esc(a.detail));
   return parts.filter(Boolean).join(' · ');
 }
+function heightInfo(a){
+  if(!a) return '';
+  const parts=[];
+  const cond=(a.condition||[]).map(String).filter(Boolean);
+  if(cond.length) parts.push(cond.join(', '));
+  if(a.isChild) parts.push('어린이 전용');
+  const rest=(a.restriction||[]).map(String).filter(Boolean);
+  if(rest.length) parts.push('이용 불가: '+rest.join(', '));
+  return parts.join(' · ');
+}
 function cardHTML(p){
   const fk='p:'+canon(p.id), fc=FAVS[fk];
   return `<div role="button" tabindex="0" class="card${p.id===selId?' sel':''}" data-id="${p.id}">
@@ -1215,6 +1236,7 @@ function cardHTML(p){
     <span class="cbody">
       <div class="cname">${esc(p.name)}</div>
       <div class="cmeta">${esc(CATS[p.cat].name)}</div>
+      ${(()=>{ const hi=heightInfo(apiOfPlace(p)); return hi?`<div class="hgt">📏 ${esc(hi)}</div>`:(p.live&&LIVE?'<div class="hgt" style="color:var(--sub)">📏 탑승 조건 정보 없음</div>':''); })()}
       <div class="cloc">${locText(p)}</div>
       <div class="dwrap">${distHTML(p)}</div>
       <div class="acts"><button type="button" class="gobtn${ROUTE&&ROUTE.id===p.id?' on':''}" data-go="${p.id}">${ROUTE&&ROUTE.id===p.id?'안내 중':'도착'}</button></div>
@@ -1266,10 +1288,10 @@ function render(){
       h+=`<div class="sec">${esc(z)} <span class="cnt">${groups[z].length}</span></div>`;
       groups[z].forEach(({a,st,pid})=>{
         const fk=favKeyApi(a), fc=FAVS[fk];
-        h+=`<div class="row"><button type="button" class="star${fc?' on':''}" data-k="${fk}" data-n="${esc(a.name)}" aria-label="즐겨찾기" style="${fc?`color:${fc}`:''}">${fc?'★':'☆'}</button>
-          <div class="nm">${esc(a.name)}<small>${esc(a.detail||'')}${st.sub?(a.detail?' · ':'')+esc(st.sub):''}</small></div>
-          <span class="pill ${st.k}">${esc(st.label)}</span>
-          <button type="button" class="go" data-pid="${pid?canon(pid):''}" ${pid?'':'disabled'}>${pid?'지도':'위치 미등록'}</button></div>`;
+        const hi=heightInfo(a);
+        h+=`<div class="row${pid&&canon(pid)===selId?' selrow':''}"><button type="button" class="star${fc?' on':''}" data-k="${fk}" data-n="${esc(a.name)}" aria-label="즐겨찾기" style="${fc?`color:${fc}`:''}">${fc?'★':'☆'}</button>
+          <div class="nm" data-pid="${pid?canon(pid):''}">${esc(a.name)}<small>${esc(a.detail||'')}${st.sub?(a.detail?' · ':'')+esc(st.sub):''}${pid?'':' · 지도 위치 미등록'}</small>${hi?`<small class="hgt">📏 ${esc(hi)}</small>`:''}</div>
+          <span class="pill ${st.k}">${esc(st.label)}</span></div>`;
       });
     });
     if(sf==='fav' && otherFavs.length){
@@ -1277,8 +1299,7 @@ function render(){
       otherFavs.forEach(p=>{
         const fk='p:'+p.id, fc=FAVS[fk];
         h+=`<div class="row"><button type="button" class="star on" data-k="${fk}" data-n="${esc(p.name)}" style="color:${fc}">★</button>
-          <div class="nm">${esc(p.name)}<small>${esc(ZONES[p.zone].name)}${p.num&&p.zone!=='T'?' '+esc(p.num)+'번':''}${p.note?' · '+esc(p.note):''}</small></div>
-          <button type="button" class="go" data-pid="${p.id}">지도</button></div>`;
+          <div class="nm" data-pid="${p.id}">${esc(p.name)}<small>${esc(ZONES[p.zone].name)}${p.num&&p.zone!=='T'?' '+esc(p.num)+'번':''}${p.note?' · '+esc(p.note):''}</small></div></div>`;
       });
     }
     if(!Object.keys(groups).length && !(sf==='fav'&&otherFavs.length)) h+= sf==='fav'
@@ -1287,10 +1308,10 @@ function render(){
     L.innerHTML=h;
     L.querySelectorAll('.filters .chip').forEach(b=>b.onclick=()=>{sf=b.dataset.f; saveLS('ew_sf',sf); render();});
     L.querySelectorAll('.star').forEach(b=>b.onclick=()=>openFavPicker(b.dataset.k,b.dataset.n));
-    L.querySelectorAll('.go[data-pid]').forEach(b=>b.onclick=()=>{
-      const id=b.dataset.pid; if(!id) return;
-      chip=null; query=BY_ID[id].name; $('#q').value=query; drawChips();
-      shown=[BY_ID[id]]; selId=id; drawMarkers(); setTab('search'); select(id,false,false); setPanel('min');
+    L.querySelectorAll('.nm[data-pid]').forEach(b=>b.onclick=()=>{
+      const id=b.dataset.pid; if(!id){ toast('이 어트랙션은 아직 지도 위치가 없어요'); return; }
+      shown=[BY_ID[id]]; selId=id; drawMarkers(); centerOn(id);
+      L.querySelectorAll('.row').forEach(r=>r.classList.toggle('selrow',r.querySelector('.nm')===b));
     });
   }
 }
