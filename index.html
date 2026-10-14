@@ -72,13 +72,12 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
 .legend{position:absolute;left:8px;bottom:20px;z-index:5;background:#fffdf8e6;border-radius:10px;padding:5px 8px;font-size:11px;color:var(--sub);line-height:1.5;box-shadow:0 1px 4px #0002}
 
 /* 하단 패널 */
-#panel{flex:none;height:38dvh;min-height:170px;display:flex;flex-direction:column;background:var(--card);border-top:1px solid var(--line);
+#panel{flex:none;height:19dvh;min-height:110px;max-height:82dvh;display:flex;flex-direction:column;background:var(--card);border-top:1px solid var(--line);
   border-radius:16px 16px 0 0;margin-top:-12px;position:relative;z-index:4;box-shadow:0 -4px 14px #0002;padding-bottom:env(safe-area-inset-bottom)}
-#panel.tall{height:66dvh}
-#panel.short{height:120px;min-height:0}
-.grip{width:100%;border:0;background:none;padding:8px 0 4px;display:grid;place-items:center}
+#panel.anim{transition:height .22s ease}
+.grip{width:100%;border:0;background:none;padding:9px 0 6px;display:grid;place-items:center;touch-action:none;cursor:ns-resize}
 .grip i{display:block;width:40px;height:5px;border-radius:9px;background:#d5c8b2}
-.tabs{display:flex;gap:4px;padding:0 12px 8px}
+.tabs{display:flex;gap:4px;padding:0 12px 8px;touch-action:none}
 .tab{flex:1;border:0;border-radius:10px;padding:8px;background:#f1e9da;color:var(--sub);font-size:14px;font-weight:700}
 .tab.on{background:var(--ink);color:#fff8ec}
 .list{flex:1;overflow-y:auto;padding:0 12px 14px;-webkit-overflow-scrolling:touch}
@@ -106,6 +105,8 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
 .row .nm small{display:block;color:var(--sub);font-size:12px;margin-top:1px}
 .row .go{flex:none;border:1px solid var(--line);background:#fff;border-radius:9px;padding:5px 8px;font-size:12.5px}
 .row .go[disabled]{opacity:.45}
+.star{flex:none;border:0;background:none;font-size:22px;line-height:1;padding:2px 2px;color:#c9b99c;cursor:pointer}
+.star.on{color:#f2a900}
 .row .pill{margin-top:0}
 .filters{display:flex;gap:6px;margin:2px 0 4px;flex-wrap:wrap}
 .filters .chip{color:var(--ink);border-color:var(--line);background:#fff}
@@ -120,7 +121,7 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
     <div class="live" id="live"><i class="dot"></i><span id="liveText">운영정보 확인 중</span><button id="refresh" type="button">새로고침</button></div>
   </div>
   <form class="search" id="searchForm" autocomplete="off">
-    <input id="q" type="search" placeholder="어트랙션·장소 검색 (예: 부메랑, 화장실)" enterkeyhint="search">
+    <input id="q" type="search" placeholder="어트랙션·장소 검색" enterkeyhint="search">
     <button type="button" id="clear">지우기</button>
   </form>
   <div class="chips" id="chips"></div>
@@ -141,7 +142,6 @@ header{padding:10px 14px 8px;background:var(--ink);color:#fff8ec;flex:none;paddi
   <div id="markers"></div>
   <div id="me"><div class="acc"></div><div class="cone"></div><div class="dotme"></div></div>
   <div class="toast" id="toast"></div>
-  <div class="legend">흰 길 = 걷는 길 · 노란 길 = 차도</div>
   <div class="zoombar">
     <button type="button" id="locBtn" aria-label="내 위치">내<br>위치</button>
     <button type="button" id="zin" aria-label="확대">+</button>
@@ -450,7 +450,7 @@ function homeView(animate){
   if(animate) animateTo(s,tx,ty); else { S=s;TX=tx;TY=ty;clamp();apply(); }
 }
 function clamp(){
-  const vw=vp.clientWidth, vh=vp.clientHeight, w=bw*S, h=bh*S, m=60;
+  const vw=vp.clientWidth, vh=vp.clientHeight, w=bw*S, h=bh*S, m=0;
   if(w<=vw) TX=(vw-w)/2; else TX=Math.min(m,Math.max(vw-w-m,TX));
   if(h<=vh) TY=(vh-h)/2; else TY=Math.min(m,Math.max(vh-h-m,TY));
 }
@@ -524,6 +524,8 @@ let lastTap=0;
 vp.addEventListener('click',e=>{
   if(moved || e.target.closest('.mk,.zoombar')) return;
   const t=performance.now();
+  if(TEST && ME){ const r=vp.getBoundingClientRect(); const x=e.clientX-r.left, y=e.clientY-r.top;
+    setFakeMe(VB.x+(x-TX)/(bw*S)*VB.w, VB.y+(y-TY)/(bh*S)*VB.h); }
   if(t-lastTap<320){ const r=vp.getBoundingClientRect(); zoomAround(S*2,e.clientX-r.left,e.clientY-r.top,260); lastTap=0; } else lastTap=t;
 });
 $('#zin').onclick=()=>zoomAround(S*1.6,vp.clientWidth/2,vp.clientHeight/2,250);
@@ -592,6 +594,12 @@ function drawMarkers(){
    내 위치 (GPS)
 ------------------------------------------------------------ */
 let ME=null, watchId=null, heading=null, firstFix=true;
+/* 테스트 모드: 주소 끝에 #test 를 붙이면 GPS 대신 지도를 누른 곳이 내 위치가 됨 */
+const TEST=/test/i.test(location.hash||'')||/[?&]test/i.test(location.search||'');
+function setFakeMe(px,py){
+  const [lat,lng]=px2ll(px,py); ME={lat,lng,acc:8,px,py}; placeOverlay(); updateDistances();
+  if(chip && tab==='search'){ shown=chipPlaces(chip).slice(0,60); drawMarkers(); render(); }
+}
 function placeMe(){
   if(!ME){ meEl.style.display='none'; return; }
   const [x,y]=toScreen(ME.px,ME.py);
@@ -602,6 +610,13 @@ function placeMe(){
   if(heading!=null){ cone.style.display='block'; cone.style.transform=`rotate(${heading}deg)`; } else cone.style.display='none';
 }
 function startGPS(){
+  if(TEST){
+    $('#locBtn').classList.add('on');
+    if(!ME) setFakeMe(168,195);
+    focusPx(ME.px,ME.py,S);
+    toast('테스트 모드: 지도를 한 번 누르면 그 자리로 내 위치가 옮겨져요',3500);
+    return;
+  }
   if(!('geolocation' in navigator)){ toast('이 기기에서는 위치 기능을 쓸 수 없어요.'); return; }
   // 나침반 (아이폰은 허락 필요)
   try{
@@ -624,7 +639,7 @@ function startGPS(){
     if(firstFix){
       firstFix=false;
       if(inside) focusPx(px,py,Math.max(S,4.5));
-      else { const d=distM(ME.lat,ME.lng,...px2ll(420,450)); toast(`지금은 이월드 밖이에요 (이월드까지 약 ${fmtDist(d)})`,3500); }
+      else { const d=distM(ME.lat,ME.lng,...px2ll(420,450)); toast(`위치는 잘 잡혔어요. 지금은 이월드 밖이에요 (이월드까지 약 ${fmtDist(d)})`,4500); }
     }
     placeOverlay(); updateDistances();
   },err=>{
@@ -774,9 +789,9 @@ function statusOfPlace(p){
    검색
 ------------------------------------------------------------ */
 const CHIP_LIST=[
-  {key:'ride',label:'어트랙션'},{key:'wc',label:'화장실'},{key:'nurse',label:'수유·기저귀'},
-  {key:'food',label:'먹거리'},{key:'locker',label:'보관함·충전'},{key:'gate',label:'출입구·광장'},
-  {key:'ent',label:'체험·동물'},{key:'shop',label:'상점'},{key:'fac',label:'의무실·안내'}
+  {key:'ride',label:'어트랙션'},{key:'wc',label:'화장실'},{key:'food',label:'먹거리'},
+  {key:'fac',label:'의무실·안내'},{key:'shop',label:'상점'},{key:'locker',label:'보관함·충전'},
+  {key:'gate',label:'출입구·광장'},{key:'ent',label:'체험·동물'},{key:'nurse',label:'수유·기저귀'}
 ];
 let chip=null, query='';
 const SEARCHABLE = PLACES.filter(p=>!HIDE_DUP.has(p.id));
@@ -809,12 +824,6 @@ function runSearch(focus=true){
   shown=list.slice(0,60);
   selId = shown.length===1 ? shown[0].id : null;
   drawMarkers();
-  if(focus && shown.length){
-    const pts=shown.map(p=>[p.px,p.py]);
-    if(ME && chip && shown.length>1){ // 가까운 곳 위주로 보기
-      fitPx([[ME.px,ME.py],[shown[0].px,shown[0].py]].concat(shown.slice(1,3).map(p=>[p.px,p.py])));
-    } else fitPx(pts);
-  }
   if(focus && !shown.length && (query||chip)) toast('찾는 장소가 없어요. 다른 이름으로 검색해 보세요.');
   setTab('search');
 }
@@ -822,10 +831,7 @@ function select(id,scrollList,zoom=true){
   selId=id; const p=BY_ID[id];
   for(const el of mkLayer.children) el.classList.toggle('sel',el.dataset.id===id);
   const el=[...mkLayer.children].find(e=>e.dataset.id===id); if(el) mkLayer.appendChild(el);
-  if(zoom){
-    if(ME && Math.hypot(p.px-ME.px,p.py-ME.py)<260) fitPx([[p.px,p.py],[ME.px,ME.py]]);
-    else focusPx(p.px,p.py,Math.max(S,4.5));
-  }
+  if(zoom) focusPx(p.px,p.py,S); // 확대 없이 그 위치로 이동만
   document.querySelectorAll('.card').forEach(c=>c.classList.toggle('sel',c.dataset.id===id));
   if(scrollList){ const c=document.querySelector(`.card[data-id="${id}"]`); if(c) c.scrollIntoView({block:'nearest',behavior:'smooth'}); }
 }
@@ -833,10 +839,42 @@ function select(id,scrollList,zoom=true){
 /* ------------------------------------------------------------
    목록
 ------------------------------------------------------------ */
-let tab='search', offOnly=false;
+let tab='search';
+function loadLS(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:v; }catch(e){ return d; } }
+function saveLS(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+let sf=loadLS('ew_sf','all'); if(!['all','fav','off'].includes(sf)) sf='all';
+let FAVS; try{ FAVS=new Set(JSON.parse(loadLS('ew_favs','[]'))); }catch(e){ FAVS=new Set(); }
 function setTab(t){ tab=t; document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===t)); render(); }
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
-$('#grip').onclick=()=>{ const p=$('#panel'); if(p.classList.contains('tall')){p.classList.remove('tall');p.classList.add('short');} else if(p.classList.contains('short')) p.classList.remove('short'); else p.classList.add('tall'); };
+/* 아래 창: 위로 끌어올리면 커지고, 내리면 작아짐 */
+const panel=$('#panel');
+function panelSizes(){ const H=window.innerHeight; return {min:Math.max(110,Math.round(H*0.19)), max:Math.round(H*0.72)}; }
+function setPanel(which){ const z=panelSizes(); panel.classList.add('anim'); panel.style.height=(which==='max'?z.max:z.min)+'px'; setTimeout(()=>panel.classList.remove('anim'),260); }
+(function(){
+  let drag=null;
+  const start=e=>{
+    if(e.target.closest('.tab') && e.pointerType==='mouse') return;
+    drag={y:e.clientY,h:panel.getBoundingClientRect().height,id:e.pointerId,moved:false};
+  };
+  window.addEventListener('pointermove',e=>{
+    if(!drag||e.pointerId!==drag.id) return;
+    const dy=drag.y-e.clientY; if(Math.abs(dy)>6) drag.moved=true;
+    if(!drag.moved) return;
+    const z=panelSizes(); panel.style.height=Math.min(z.max+40,Math.max(z.min-20,drag.h+dy))+'px';
+  });
+  const end=e=>{
+    if(!drag||e.pointerId!==drag.id) return;
+    const z=panelSizes(), h=panel.getBoundingClientRect().height, wasMoved=drag.moved, startH=drag.h; drag=null;
+    if(!wasMoved){ if(e.target.closest('.grip')) setPanel(startH>(z.min+z.max)/2?'min':'max'); return; }
+    panel.dataset.justDragged='1'; setTimeout(()=>{delete panel.dataset.justDragged},350);
+    setPanel(h>(startH<(z.min+z.max)/2 ? z.min+40 : z.max-40)?'max':'min');
+  };
+  $('#grip').addEventListener('pointerdown',start);
+  document.querySelector('.tabs').addEventListener('pointerdown',start);
+  window.addEventListener('pointerup',end); window.addEventListener('pointercancel',end);
+})();
+// 드래그 직후 탭이 눌리는 것 방지
+document.querySelectorAll('.tab').forEach(b=>{ b.addEventListener('click',e=>{ if(panel.dataset.justDragged){ e.stopImmediatePropagation(); } },true); });
 
 function pillHTML(st){
   if(!st) return '';
@@ -871,10 +909,7 @@ function render(){
   if(tab==='search'){
     let h=bannerHTML();
     if(!query && !chip){
-      h+=`<div class="hint">📍 오른쪽 아래 <b>내 위치</b>를 누르면 지금 있는 곳이 파란 점으로 보여요.<br>
-      🔎 검색창에 <b>어트랙션이나 장소 이름</b>을 입력하거나 <b>화장실·수유·보관함</b> 버튼을 눌러 보세요. 내 위치가 켜져 있으면 <b>가까운 순</b>으로 보여 주고, 거리와 방향도 알려 줘요.<br>
-      지도는 손가락으로 끌고, 두 손가락으로 벌려 확대해요. 확대할수록 이름이 더 많이 보여요.<br>
-      <span style="font-size:12.5px">※ 실제 지도 기준으로 다시 그린 지도예요. 일부 시설 위치는 가이드맵을 바탕으로 추정해서 수십 m 차이가 날 수 있어요.</span></div>`;
+      h+='';
     } else if(!shown.length){
       h+=`<div class="hint">'${esc(query)}'(으)로 찾은 장소가 없어요. 짧게(예: '바이킹', '토끼') 입력해 보세요.</div>`;
     } else {
@@ -889,28 +924,39 @@ function render(){
     if(!LIVE){ L.innerHTML=h+(GAS_URL&&!liveErr?'<div class="hint">불러오는 중…</div>':''); return; }
     const items=LIVE.items.map(a=>({a,st:statusOf(a),pid:PLACE_OF[a.id]}));
     const offs=items.filter(x=>x.st.k==='off').length;
+    const favCnt=items.filter(x=>FAVS.has(x.a.name)).length;
     h+=`<div class="filters">
-      <button type="button" class="chip ${offOnly?'':'on'}" data-f="all">전체 ${items.length}</button>
-      <button type="button" class="chip ${offOnly?'on':''}" data-f="off">운휴·종료만 ${offs}</button></div>
+      <button type="button" class="chip ${sf==='all'?'on':''}" data-f="all">전체 ${items.length}</button>
+      <button type="button" class="chip ${sf==='fav'?'on':''}" data-f="fav">★ 즐겨찾기 ${favCnt}</button>
+      <button type="button" class="chip ${sf==='off'?'on':''}" data-f="off">운휴·종료만 ${offs}</button></div>
       <div class="hint" style="padding:2px 4px 0;font-size:12.5px">이월드 홈페이지 어트랙션 목록 · ${esc((LIVE.fetchedAt||'').slice(5,16).replace('T',' '))} 기준</div>`;
     const groups={};
-    items.filter(x=>!offOnly||x.st.k==='off').forEach(x=>{(groups[x.a.zone||'기타']=groups[x.a.zone||'기타']||[]).push(x)});
+    items.filter(x=> sf==='all' || (sf==='off'&&x.st.k==='off') || (sf==='fav'&&FAVS.has(x.a.name)))
+      .forEach(x=>{(groups[x.a.zone||'기타']=groups[x.a.zone||'기타']||[]).push(x)});
     const order=['판타지월드','다이나믹월드','어드벤처월드','매직월드'];
     Object.keys(groups).sort((a,b)=>(order.indexOf(a)+99)%99-(order.indexOf(b)+99)%99).forEach(z=>{
       h+=`<div class="sec">${esc(z)} <span class="cnt">${groups[z].length}</span></div>`;
       groups[z].forEach(({a,st,pid})=>{
-        h+=`<div class="row"><div class="nm">${esc(a.name)}<small>${esc(a.detail||'')}${st.sub?(a.detail?' · ':'')+esc(st.sub):''}</small></div>
+        const fav=FAVS.has(a.name);
+        h+=`<div class="row"><button type="button" class="star${fav?' on':''}" data-name="${esc(a.name)}" aria-label="즐겨찾기">${fav?'★':'☆'}</button>
+          <div class="nm">${esc(a.name)}<small>${esc(a.detail||'')}${st.sub?(a.detail?' · ':'')+esc(st.sub):''}</small></div>
           <span class="pill ${st.k}">${esc(st.label)}</span>
           <button type="button" class="go" data-pid="${pid||''}" ${pid?'':'disabled'}>${pid?'지도':'위치 미등록'}</button></div>`;
       });
     });
-    if(!Object.keys(groups).length) h+='<div class="hint">해당하는 어트랙션이 없어요.</div>';
+    if(!Object.keys(groups).length) h+= sf==='fav'
+      ? '<div class="hint">어트랙션 이름 앞의 ☆를 누르면 즐겨찾기에 추가돼요.</div>'
+      : '<div class="hint">해당하는 어트랙션이 없어요.</div>';
     L.innerHTML=h;
-    L.querySelectorAll('.filters .chip').forEach(b=>b.onclick=()=>{offOnly=b.dataset.f==='off';render();});
+    L.querySelectorAll('.filters .chip').forEach(b=>b.onclick=()=>{sf=b.dataset.f; saveLS('ew_sf',sf); render();});
+    L.querySelectorAll('.star').forEach(b=>b.onclick=()=>{
+      const n=b.dataset.name; if(FAVS.has(n)) FAVS.delete(n); else FAVS.add(n);
+      saveLS('ew_favs',JSON.stringify([...FAVS])); render();
+    });
     L.querySelectorAll('.go[data-pid]').forEach(b=>b.onclick=()=>{
       const id=b.dataset.pid; if(!id) return;
       chip=null; query=BY_ID[id].name; $('#q').value=query; drawChips();
-      shown=[BY_ID[id]]; selId=id; drawMarkers(); setTab('search'); select(id,false,true);
+      shown=[BY_ID[id]]; selId=id; drawMarkers(); setTab('search'); select(id,false,true); setPanel('min');
     });
   }
 }
